@@ -1,6 +1,7 @@
 # mdora
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-brown.svg)](./LICENSE)
+[![StackLint grade](https://stacklint.app/api/badge/github/Greg-Klein/MDora.svg)](https://stacklint.app/analyze?repo=https%3A%2F%2Fgithub.com%2FGreg-Klein%2FMDora)
 
 A markdown file viewer that doesn't feel like a Word doc or like an IDE. Just a quiet place to read `.md` files, with Mermaid graphs that actually work and code highlighting that doesn't hurt your eyes.
 
@@ -97,7 +98,7 @@ Mermaid is re-initialized on every theme switch so existing SVGs are regenerated
 
 In-document search uses the [CSS Custom Highlight API](https://developer.mozilla.org/en-US/docs/Web/API/CSS_Custom_Highlight_API) (`CSS.highlights` + `Highlight` ranges) instead of mutating the DOM. No fight with React's reconciler, no extra wrapper elements injected into the rendered Markdown. Requires WebKit 17.2+ / Chromium 105+, which is well within Tauri's modern WebView baseline.
 
-The filesystem scope is limited to `$HOME`, `$DESKTOP`, `$DOCUMENT`, `$DOWNLOAD` and any `.md` / `.markdown` file. If you need to widen it, edit `src-tauri/capabilities/default.json`.
+The filesystem scope is limited to paths the user explicitly picks via the open / save dialog (Tauri grants ephemeral scopes for those). The static `fs:scope` is intentionally empty so a malicious `.md` file cannot reach anything else. If you need to widen it, edit `src-tauri/capabilities/default.json`.
 
 ## License
 
