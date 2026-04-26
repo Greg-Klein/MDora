@@ -1,4 +1,4 @@
-# mdora
+# MDora
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-brown.svg)](./LICENSE)
 [![StackLint grade](https://stacklint.app/api/badge/github/Greg-Klein/MDora.svg)](https://stacklint.app/analyze?repo=https%3A%2F%2Fgithub.com%2FGreg-Klein%2FMDora)
@@ -21,16 +21,16 @@ Cross-platform desktop app built with [Tauri v2](https://v2.tauri.app/), so it s
 
 ## Stack
 
-| Layer           | Choice                                 |
-| --------------- | -------------------------------------- |
-| Desktop shell   | Tauri v2                               |
-| Backend         | Rust 1.95 + `tauri-plugin-fs/dialog`   |
-| Frontend        | Vite 5 + React 18 + TypeScript 5.6     |
-| Markdown engine | `react-markdown` + `remark-gfm`        |
-| Code highlight  | `rehype-highlight` (highlight.js 11)   |
-| Diagrams        | `mermaid` 11                           |
-| Styling         | Tailwind v3 + custom CSS variables     |
-| Icons           | `@phosphor-icons/react`                |
+| Layer           | Choice                               |
+| --------------- | ------------------------------------ |
+| Desktop shell   | Tauri v2                             |
+| Backend         | Rust 1.95 + `tauri-plugin-fs/dialog` |
+| Frontend        | Vite 5 + React 18 + TypeScript 5.6   |
+| Markdown engine | `react-markdown` + `remark-gfm`      |
+| Code highlight  | `rehype-highlight` (highlight.js 11) |
+| Diagrams        | `mermaid` 11                         |
+| Styling         | Tailwind v3 + custom CSS variables   |
+| Icons           | `@phosphor-icons/react`              |
 
 ## Install
 
