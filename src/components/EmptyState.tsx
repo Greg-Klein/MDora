@@ -54,7 +54,7 @@ export function EmptyState({ onOpen }: Props) {
           color: "var(--text-faint)",
           letterSpacing: "0.04em",
         }}>
-          ⌘O OPEN · ⌘S SAVE · ⌘E TOGGLE EDIT · ⌘D TOGGLE THEME
+          ⌘O OPEN · ⌘S SAVE · ⌘E TOGGLE EDIT · ⌘F FIND · ⌘D TOGGLE THEME
         </p>
       </div>
     </div>

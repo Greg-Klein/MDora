@@ -14,6 +14,7 @@ import {
 } from "@phosphor-icons/react";
 import { MarkdownView } from "./components/MarkdownView";
 import { EmptyState } from "./components/EmptyState";
+import { SearchBar } from "./components/SearchBar";
 
 type Theme = "light" | "dark";
 type Mode = "read" | "edit";
@@ -42,7 +43,13 @@ export default function App() {
   const [originalContent, setOriginalContent] = useState<string>("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchIndex, setSearchIndex] = useState(0);
+  const [searchCount, setSearchCount] = useState(0);
+  const [searchFocusToken, setSearchFocusToken] = useState(0);
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -142,14 +149,26 @@ export default function App() {
     };
   }, [loadFromPath]);
 
+  const openSearch = useCallback(() => {
+    if (!content) return;
+    setSearchOpen(true);
+    setSearchFocusToken((t) => t + 1);
+  }, [content]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && searchOpen) {
+        e.preventDefault();
+        setSearchOpen(false);
+        return;
+      }
       const mod = e.metaKey || e.ctrlKey;
       if (!mod) return;
       const k = e.key.toLowerCase();
       if (k === "o") { e.preventDefault(); handleOpen(); }
       else if (k === "s") { e.preventDefault(); handleSave(); }
+      else if (k === "f") { e.preventDefault(); openSearch(); }
       else if (k === "e") {
         e.preventDefault();
         setMode((m) => (m === "edit" ? "read" : "edit"));
@@ -161,7 +180,73 @@ export default function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [handleOpen, handleSave]);
+  }, [handleOpen, handleSave, openSearch, searchOpen]);
+
+  // Reset match index when query changes
+  useEffect(() => {
+    setSearchIndex(0);
+  }, [searchQuery]);
+
+  // Highlight search matches via CSS Custom Highlight API
+  useEffect(() => {
+    const container = contentRef.current;
+    const registry = (CSS as unknown as { highlights?: HighlightRegistry }).highlights;
+    if (!registry || typeof Highlight === "undefined") return;
+
+    registry.delete("mdora-search-hit");
+    registry.delete("mdora-search-current");
+
+    if (!searchOpen || !searchQuery || !container) {
+      setSearchCount(0);
+      return;
+    }
+
+    const q = searchQuery.toLowerCase();
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        if (!node.nodeValue) return NodeFilter.FILTER_REJECT;
+        const parent = (node as Text).parentElement;
+        if (!parent) return NodeFilter.FILTER_REJECT;
+        if (parent.closest("script, style")) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      },
+    });
+
+    const ranges: Range[] = [];
+    let n: Node | null;
+    while ((n = walker.nextNode())) {
+      const text = n.nodeValue ?? "";
+      const lower = text.toLowerCase();
+      let idx = lower.indexOf(q);
+      while (idx !== -1) {
+        const r = new Range();
+        r.setStart(n, idx);
+        r.setEnd(n, idx + q.length);
+        ranges.push(r);
+        idx = lower.indexOf(q, idx + q.length);
+      }
+    }
+
+    setSearchCount(ranges.length);
+    if (ranges.length === 0) return;
+
+    const safeIdx = ((searchIndex % ranges.length) + ranges.length) % ranges.length;
+    const currentRange = ranges[safeIdx];
+    const others = ranges.filter((_, i) => i !== safeIdx);
+
+    if (others.length > 0) registry.set("mdora-search-hit", new Highlight(...others));
+    registry.set("mdora-search-current", new Highlight(currentRange));
+
+    const parentEl = currentRange.startContainer.parentElement;
+    parentEl?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [searchOpen, searchQuery, searchIndex, content, mode, theme]);
+
+  const stepSearch = useCallback((delta: number) => {
+    setSearchIndex((i) => {
+      if (searchCount === 0) return 0;
+      return ((i + delta) % searchCount + searchCount) % searchCount;
+    });
+  }, [searchCount]);
 
   const dirty = content !== originalContent;
   const hasContent = content.length > 0;
@@ -237,19 +322,31 @@ export default function App() {
       </header>
 
       {/* Main */}
-      <main className="flex-1 min-h-0 flex flex-col">
+      <main className="flex-1 min-h-0 flex flex-col relative">
         {!hasContent ? (
           <EmptyState onOpen={handleOpen} />
         ) : mode === "read" ? (
-          <ReadPane content={content} themeKey={theme} />
+          <ReadPane content={content} themeKey={theme} contentRef={contentRef} />
         ) : (
           <EditPane
             content={content}
             onChange={setContent}
             themeKey={theme}
             editorRef={editorRef}
+            contentRef={contentRef}
           />
         )}
+        <SearchBar
+          open={searchOpen && hasContent}
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          count={searchCount}
+          current={searchIndex}
+          onPrev={() => stepSearch(-1)}
+          onNext={() => stepSearch(1)}
+          onClose={() => setSearchOpen(false)}
+          focusToken={searchFocusToken}
+        />
       </main>
 
       {/* Status bar */}
@@ -280,10 +377,18 @@ export default function App() {
   );
 }
 
-function ReadPane({ content, themeKey }: { content: string; themeKey: Theme }) {
+function ReadPane({
+  content,
+  themeKey,
+  contentRef,
+}: {
+  content: string;
+  themeKey: Theme;
+  contentRef: React.MutableRefObject<HTMLDivElement | null>;
+}) {
   return (
     <div className="flex-1 min-h-0 overflow-auto">
-      <div className="mx-auto py-12 px-8 rise" style={{ maxWidth: "min(72ch, 100%)" }}>
+      <div ref={contentRef} className="mx-auto py-12 px-8 rise" style={{ maxWidth: "min(72ch, 100%)" }}>
         <MarkdownView source={content} themeKey={themeKey} />
       </div>
     </div>
@@ -295,11 +400,13 @@ function EditPane({
   onChange,
   themeKey,
   editorRef,
+  contentRef,
 }: {
   content: string;
   onChange: (s: string) => void;
   themeKey: Theme;
   editorRef: React.MutableRefObject<HTMLTextAreaElement | null>;
+  contentRef: React.MutableRefObject<HTMLDivElement | null>;
 }) {
   return (
     <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2"
@@ -316,7 +423,7 @@ function EditPane({
         />
       </div>
       <div className="min-h-0 overflow-auto" style={{ background: "var(--bg)" }}>
-        <div className="mx-auto py-10 px-8" style={{ maxWidth: "min(70ch, 100%)" }}>
+        <div ref={contentRef} className="mx-auto py-10 px-8" style={{ maxWidth: "min(70ch, 100%)" }}>
           <MarkdownView source={content} themeKey={themeKey} />
         </div>
       </div>

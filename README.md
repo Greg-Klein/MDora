@@ -1,18 +1,22 @@
 # mdora
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-brown.svg)](./LICENSE)
+
 A markdown file viewer that doesn't feel like a Word doc or like an IDE. Just a quiet place to read `.md` files, with Mermaid graphs that actually work and code highlighting that doesn't hurt your eyes.
 
 Cross-platform desktop app built with [Tauri v2](https://v2.tauri.app/), so it ships as a native ~10 MB binary that starts instantly on macOS, Windows and Linux.
 
 ## Features
 
-- Open `.md` / `.markdown` files via native dialog (Tauri `plugin-dialog`)
+- Open `.md` / `.markdown` / `.mdx` files via native dialog or drag-and-drop on the window
 - GitHub Flavored Markdown rendering: tables, task lists, strikethrough, autolinks, footnotes
 - Live Mermaid graphs: flowcharts, sequence, class, ER, gantt, journey, C4, state, gitGraph
 - Syntax highlighting via highlight.js
+- In-document search (`Cmd/Ctrl+F`): case-insensitive, current/total counter, Enter / Shift+Enter to navigate, Esc to close
 - Light / dark toggle, theme persisted to local storage
 - Read / edit toggle with split-pane live preview
 - Direct save or Save As (toolbar button)
+- Keyboard shortcuts: `Cmd/Ctrl+O` open, `Cmd/Ctrl+S` save, `Cmd/Ctrl+E` toggle edit, `Cmd/Ctrl+F` find, `Cmd/Ctrl+D` toggle theme
 
 ## Stack
 
@@ -67,13 +71,13 @@ The binary lands in `src-tauri/target/release/mdora` (~10 MB).
 ```
 mdora/
 ├── src/
-│   ├── App.tsx                  Shell, toolbar, shortcuts
+│   ├── App.tsx                  Shell, toolbar, shortcuts, search
 │   ├── components/
 │   │   ├── MarkdownView.tsx     Markdown rendering pipeline
 │   │   ├── MermaidBlock.tsx     Mermaid render + theme reactivity
+│   │   ├── SearchBar.tsx        Find-in-document overlay
 │   │   └── EmptyState.tsx       Welcome screen
-│   ├── sample.ts                Sample markdown
-│   ├── styles.css               Theme tokens + prose CSS
+│   ├── styles.css               Theme tokens + prose CSS + search highlights
 │   └── main.tsx
 ├── src-tauri/
 │   ├── src/
@@ -91,12 +95,10 @@ mdora/
 
 Mermaid is re-initialized on every theme switch so existing SVGs are regenerated with the right palette. Mermaid blocks are identified by the ` ```mermaid ` fence, so you can freely mix code and diagrams in the same document.
 
+In-document search uses the [CSS Custom Highlight API](https://developer.mozilla.org/en-US/docs/Web/API/CSS_Custom_Highlight_API) (`CSS.highlights` + `Highlight` ranges) instead of mutating the DOM. No fight with React's reconciler, no extra wrapper elements injected into the rendered Markdown. Requires WebKit 17.2+ / Chromium 105+, which is well within Tauri's modern WebView baseline.
+
 The filesystem scope is limited to `$HOME`, `$DESKTOP`, `$DOCUMENT`, `$DOWNLOAD` and any `.md` / `.markdown` file. If you need to widen it, edit `src-tauri/capabilities/default.json`.
 
-## Roadmap
+## License
 
-- [ ] Drag-and-drop a file onto the window
-- [ ] Folder tree in a side panel
-- [ ] Export to PDF / HTML
-- [ ] In-file search (`Cmd+F`)
-- [ ] Obsidian-style wiki links (`[[wiki links]]`)
+MIT. See [`LICENSE`](./LICENSE).
