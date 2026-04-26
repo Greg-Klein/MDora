@@ -1,0 +1,23 @@
+node_modules
+dist
+dist-ssr
+*.local
+
+# editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# tauri
+src-tauri/target
+src-tauri/gen
+
+# test artifacts
+.playwright-mcp/
+test-output/

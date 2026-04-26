@@ -1,0 +1,381 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #fafaf9;
+  --surface: #ffffff;
+  --surface-2: #f5f4f2;
+  --text: #161613;
+  --text-muted: #52504c;
+  --text-faint: #a4a09a;
+  --border: #e7e5e0;
+  --border-strong: #d2cfc8;
+  --accent: #0f8a6a;
+  --accent-soft: rgba(15, 138, 106, 0.08);
+
+  --hl-keyword: #8c2a8a;
+  --hl-string: #0a7060;
+  --hl-number: #b6431f;
+  --hl-comment: #8a8784;
+  --hl-fn: #1a4f99;
+  --hl-type: #b6431f;
+  --hl-tag: #8c2a8a;
+}
+
+:root.dark {
+  --bg: #0c0c0a;
+  --surface: #161613;
+  --surface-2: #1c1b18;
+  --text: #f5f4f2;
+  --text-muted: #a4a09a;
+  --text-faint: #73706b;
+  --border: #26241f;
+  --border-strong: #3a3835;
+  --accent: #34d399;
+  --accent-soft: rgba(52, 211, 153, 0.10);
+
+  --hl-keyword: #d987d6;
+  --hl-string: #6ee7b7;
+  --hl-number: #fdba74;
+  --hl-comment: #6b6864;
+  --hl-fn: #93c5fd;
+  --hl-type: #fdba74;
+  --hl-tag: #d987d6;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Geist", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+
+button {
+  font-family: inherit;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+/* --- Markdown prose ---------------------------------------------------- */
+.prose {
+  color: var(--text);
+  font-size: 16.5px;
+  line-height: 1.7;
+  max-width: 72ch;
+}
+
+.prose > * + * { margin-top: 1.1em; }
+
+.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  line-height: 1.25;
+  color: var(--text);
+}
+
+.prose h1 { font-size: 2.05rem; margin-top: 0.4em; letter-spacing: -0.022em; }
+.prose h2 { font-size: 1.55rem; margin-top: 1.7em; letter-spacing: -0.018em; }
+.prose h3 { font-size: 1.22rem; margin-top: 1.5em; }
+.prose h4 { font-size: 1.05rem; margin-top: 1.4em; }
+.prose h5, .prose h6 { font-size: 0.95rem; color: var(--text-muted); }
+
+.prose h2 {
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--border);
+}
+
+.prose p { color: var(--text); }
+.prose strong { font-weight: 600; }
+.prose em { font-style: italic; }
+
+.prose a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in oklab, var(--accent) 35%, transparent);
+  transition: border-color 120ms ease, color 120ms ease;
+}
+.prose a:hover {
+  border-bottom-color: var(--accent);
+}
+
+.prose ul, .prose ol {
+  padding-left: 1.4em;
+}
+.prose ul { list-style: disc; }
+.prose ol { list-style: decimal; }
+.prose li { margin: 0.3em 0; }
+.prose li::marker { color: var(--text-faint); }
+
+.prose ul.contains-task-list {
+  list-style: none;
+  padding-left: 0.2em;
+}
+.prose .task-list-item { display: flex; align-items: baseline; gap: 0.6em; }
+.prose .task-list-item input[type="checkbox"] {
+  appearance: none;
+  width: 14px; height: 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  display: inline-block;
+  position: relative;
+  top: 2px;
+  background: var(--surface);
+}
+.prose .task-list-item input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.prose .task-list-item input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 3px; top: 0px;
+  width: 4px; height: 8px;
+  border: solid var(--surface);
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+
+.prose blockquote {
+  border-left: 2px solid var(--accent);
+  padding: 0.1em 0 0.1em 1em;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.prose hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 2.4em 0;
+}
+
+.prose code {
+  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 0.1em 0.38em;
+}
+
+.prose pre {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1em 1.15em;
+  overflow-x: auto;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.prose pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-size: inherit;
+  color: var(--text);
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+.prose th, .prose td {
+  border: 1px solid var(--border);
+  padding: 0.55em 0.85em;
+  text-align: left;
+}
+.prose th {
+  background: var(--surface-2);
+  font-weight: 600;
+}
+
+.prose img {
+  max-width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.prose kbd {
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 0.78em;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 0.1em 0.4em;
+}
+
+/* --- Highlight.js custom theme via CSS vars ---------------------------- */
+.hljs { color: var(--text); background: transparent; }
+.hljs-keyword, .hljs-built_in, .hljs-selector-tag { color: var(--hl-keyword); }
+.hljs-string, .hljs-attr { color: var(--hl-string); }
+.hljs-number, .hljs-literal { color: var(--hl-number); }
+.hljs-comment, .hljs-quote { color: var(--hl-comment); font-style: italic; }
+.hljs-title, .hljs-function .hljs-title, .hljs-section { color: var(--hl-fn); }
+.hljs-type, .hljs-class .hljs-title, .hljs-params { color: var(--hl-type); }
+.hljs-tag, .hljs-name, .hljs-selector-id, .hljs-selector-class { color: var(--hl-tag); }
+.hljs-meta, .hljs-deletion { color: var(--text-faint); }
+.hljs-addition { color: var(--hl-string); }
+
+/* --- Mermaid container ------------------------------------------------- */
+.mermaid-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.1em 1em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow-x: auto;
+}
+.mermaid-card svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* --- Editor textarea --------------------------------------------------- */
+.editor-pane {
+  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13.5px;
+  line-height: 1.65;
+  background: var(--surface);
+  color: var(--text);
+  border: 0;
+  outline: 0;
+  resize: none;
+  padding: 1.5rem 1.75rem;
+  width: 100%;
+  height: 100%;
+  tab-size: 2;
+}
+.editor-pane::placeholder { color: var(--text-faint); }
+
+/* --- Buttons ----------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 32px;
+  padding: 0 0.7rem;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 100ms ease, border-color 100ms ease, transform 80ms ease;
+}
+.btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
+.btn:active { transform: translateY(1px); }
+.btn[data-variant="primary"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #06281f;
+}
+.dark .btn[data-variant="primary"] { color: #062018; }
+.btn[data-variant="primary"]:hover {
+  background: color-mix(in oklab, var(--accent) 90%, white);
+}
+.btn-ghost {
+  height: 32px;
+  width: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 100ms ease, color 100ms ease;
+}
+.btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+.btn-ghost:active { transform: translateY(1px); }
+
+/* --- Toolbar ----------------------------------------------------------- */
+.toolbar {
+  height: 48px;
+  background: color-mix(in oklab, var(--bg) 86%, transparent);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: saturate(160%) blur(10px);
+  -webkit-backdrop-filter: saturate(160%) blur(10px);
+}
+
+.statusbar {
+  height: 26px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  color: var(--text-faint);
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+}
+
+/* --- Segmented control -------------------------------------------------- */
+.segmented {
+  display: inline-flex;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+.segmented button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 26px;
+  padding: 0 0.6rem;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.segmented button:hover { color: var(--text); }
+.segmented button[data-active="true"] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04), inset 0 0 0 1px var(--border);
+}
+.dark .segmented button[data-active="true"] {
+  box-shadow: 0 1px 0 rgba(0,0,0,0.5), inset 0 0 0 1px var(--border-strong);
+}
+
+/* --- Empty state grid background --------------------------------------- */
+.dotgrid {
+  background-image: radial-gradient(circle at center, var(--border-strong) 1px, transparent 1.2px);
+  background-size: 22px 22px;
+  background-position: 0 0;
+  mask-image: radial-gradient(ellipse 60% 60% at 50% 40%, black 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 60% 60% at 50% 40%, black 30%, transparent 75%);
+}
+
+/* --- Subtle reveal animation ------------------------------------------- */
+@keyframes mdora-rise {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rise { animation: mdora-rise 220ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* --- Scrollbar tone ---------------------------------------------------- */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 8px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+::-webkit-scrollbar-track { background: transparent; }
