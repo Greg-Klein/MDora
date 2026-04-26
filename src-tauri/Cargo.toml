@@ -1,6 +1,6 @@
 [package]
 name = "mdora"
-version = "0.1.1"
+version = "0.2.0"
 description = "A Markdown reader with Mermaid graph support"
 authors = ["Gregory Klein"]
 edition = "2021"
