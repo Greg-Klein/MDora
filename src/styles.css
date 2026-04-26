@@ -305,6 +305,43 @@ button {
 }
 .btn-ghost:hover { background: var(--surface-2); color: var(--text); }
 .btn-ghost:active { transform: translateY(1px); }
+.btn-ghost[data-active="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.btn-ghost[data-active="true"]:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.btn-ghost:disabled { cursor: not-allowed; }
+
+/* --- Drag-and-drop overlay -------------------------------------------- */
+.drop-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in oklab, var(--bg) 70%, transparent);
+  backdrop-filter: saturate(140%) blur(6px);
+  -webkit-backdrop-filter: saturate(140%) blur(6px);
+  pointer-events: none;
+  animation: mdora-rise 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.drop-card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1.2rem 1.6rem;
+  background: var(--surface);
+  border: 1.5px dashed var(--accent);
+  border-radius: 14px;
+  color: var(--text);
+  font-weight: 500;
+  font-size: 14px;
+  box-shadow: 0 18px 50px -20px rgba(0, 0, 0, 0.18), inset 0 0 0 1px var(--accent-soft);
+}
 
 /* --- Toolbar ----------------------------------------------------------- */
 .toolbar {

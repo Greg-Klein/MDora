@@ -12,7 +12,7 @@ Cross-platform desktop app built with [Tauri v2](https://v2.tauri.app/), so it s
 - Syntax highlighting via highlight.js
 - Light / dark toggle, theme persisted to local storage
 - Read / edit toggle with split-pane live preview
-- Direct save (`Cmd/Ctrl+S`) or Save As when no path is set
+- Direct save or Save As (toolbar button)
 
 ## Stack
 
@@ -61,15 +61,6 @@ npm run tauri build -- --no-bundle
 ```
 
 The binary lands in `src-tauri/target/release/mdora` (~10 MB).
-
-## Keyboard shortcuts
-
-| Shortcut        | Action                       |
-| --------------- | ---------------------------- |
-| `Cmd/Ctrl+O`    | Open file                    |
-| `Cmd/Ctrl+S`    | Save                         |
-| `Cmd/Ctrl+E`    | Toggle read / edit           |
-| `Cmd/Ctrl+D`    | Toggle light / dark          |
 
 ## Project structure
 

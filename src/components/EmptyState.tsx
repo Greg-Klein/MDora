@@ -1,11 +1,10 @@
-import { FileText, FolderOpen, Lightning } from "@phosphor-icons/react";
+import { FileText, FolderOpen } from "@phosphor-icons/react";
 
 interface Props {
   onOpen: () => void;
-  onSample: () => void;
 }
 
-export function EmptyState({ onOpen, onSample }: Props) {
+export function EmptyState({ onOpen }: Props) {
   return (
     <div className="relative flex-1 flex items-center justify-center overflow-hidden">
       <div className="dotgrid absolute inset-0 pointer-events-none" />
@@ -40,16 +39,12 @@ export function EmptyState({ onOpen, onSample }: Props) {
             border: "1px solid var(--border)",
             padding: "0.05em 0.4em",
             borderRadius: 4,
-          }}>.md</code> file to read it with proper typography, syntax highlighting and Mermaid graphs.
+          }}>.md</code> file to read it with proper typography, syntax highlighting and Mermaid graphs. Drag-and-drop a file works too.
         </p>
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center">
           <button className="btn" data-variant="primary" onClick={onOpen}>
             <FolderOpen size={15} weight="bold" />
             Open file
-          </button>
-          <button className="btn" onClick={onSample}>
-            <Lightning size={15} weight="bold" />
-            Load sample
           </button>
         </div>
         <p style={{
@@ -59,7 +54,7 @@ export function EmptyState({ onOpen, onSample }: Props) {
           color: "var(--text-faint)",
           letterSpacing: "0.04em",
         }}>
-          ⌘O OPEN · ⌘E TOGGLE EDIT · ⌘D TOGGLE THEME
+          ⌘O OPEN · ⌘S SAVE · ⌘E TOGGLE EDIT · ⌘D TOGGLE THEME
         </p>
       </div>
     </div>
