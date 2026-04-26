@@ -18,6 +18,7 @@ Cross-platform desktop app built with [Tauri v2](https://v2.tauri.app/), so it s
 - Read / edit toggle with split-pane live preview
 - Direct save or Save As (toolbar button)
 - Keyboard shortcuts: `Cmd/Ctrl+O` open, `Cmd/Ctrl+S` save, `Cmd/Ctrl+E` toggle edit, `Cmd/Ctrl+F` find, `Cmd/Ctrl+D` toggle theme
+- Update detection: checks GitHub Releases at startup and shows a non-blocking banner when a newer version is available
 
 ## Stack
 
@@ -104,6 +105,8 @@ Mermaid is re-initialized on every theme switch so existing SVGs are regenerated
 In-document search uses the [CSS Custom Highlight API](https://developer.mozilla.org/en-US/docs/Web/API/CSS_Custom_Highlight_API) (`CSS.highlights` + `Highlight` ranges) instead of mutating the DOM. No fight with React's reconciler, no extra wrapper elements injected into the rendered Markdown. Requires WebKit 17.2+ / Chromium 105+, which is well within Tauri's modern WebView baseline.
 
 The filesystem scope is limited to paths the user explicitly picks via the open / save dialog (Tauri grants ephemeral scopes for those). The static `fs:scope` is intentionally empty so a malicious `.md` file cannot reach anything else. If you need to widen it, edit `src-tauri/capabilities/default.json`.
+
+Update detection runs at startup from the Rust side (`src-tauri/src/updater.rs`), so the frontend CSP stays `default-src 'self'` with no remote `connect-src`. It hits `api.github.com/repos/Greg-Klein/MDora/releases/latest`, compares `tag_name` to the bundled `package_info().version` via `semver`, and emits an `UpdateInfo` payload only when a strictly greater version exists (drafts and prereleases ignored). The banner uses `tauri-plugin-opener` with a permission scoped to `github.com/Greg-Klein/MDora/releases/*`, so it cannot open arbitrary URLs. Dismissals are remembered per-version in `localStorage` so the same release does not nag twice.
 
 ## License
 

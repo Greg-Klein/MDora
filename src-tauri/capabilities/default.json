@@ -10,6 +10,10 @@
     "dialog:allow-save",
     "fs:default",
     "fs:allow-read-text-file",
-    "fs:allow-write-text-file"
+    "fs:allow-write-text-file",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [{ "url": "https://github.com/Greg-Klein/MDora/releases/*" }]
+    }
   ]
 }

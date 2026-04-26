@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { invoke } from "@tauri-apps/api/core";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import mermaid from "mermaid";
 import {
   PencilSimple,
@@ -15,6 +17,15 @@ import {
 import { MarkdownView } from "./components/MarkdownView";
 import { EmptyState } from "./components/EmptyState";
 import { SearchBar } from "./components/SearchBar";
+import { UpdateBanner } from "./components/UpdateBanner";
+
+interface UpdateInfo {
+  version: string;
+  url: string;
+  notes: string;
+}
+
+const DISMISSED_UPDATE_KEY = "mdora.update.dismissed";
 
 type Theme = "light" | "dark";
 type Mode = "read" | "edit";
@@ -48,6 +59,7 @@ export default function App() {
   const [searchIndex, setSearchIndex] = useState(0);
   const [searchCount, setSearchCount] = useState(0);
   const [searchFocusToken, setSearchFocusToken] = useState(0);
+  const [update, setUpdate] = useState<UpdateInfo | null>(null);
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
@@ -120,6 +132,24 @@ export default function App() {
     if (dirty && !window.confirm("Discard unsaved changes and reload from disk?")) return;
     await loadFromPath(filePath);
   };
+
+  // GitHub release check (one-shot at mount)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const info = await invoke<UpdateInfo | null>("check_for_update");
+        if (cancelled || !info) return;
+        if (localStorage.getItem(DISMISSED_UPDATE_KEY) === info.version) return;
+        setUpdate(info);
+      } catch {
+        // Offline, rate-limited, or not running under Tauri. Silently ignore.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Tauri drag-and-drop file handler
   useEffect(() => {
@@ -347,6 +377,21 @@ export default function App() {
         <span>{content.length.toLocaleString()} chars</span>
         <span className="statusbar-mode">{mode}</span>
       </footer>
+
+      {/* Update banner */}
+      {update ? (
+        <UpdateBanner
+          version={update.version}
+          url={update.url}
+          onDownload={() => {
+            void openUrl(update.url);
+          }}
+          onDismiss={() => {
+            localStorage.setItem(DISMISSED_UPDATE_KEY, update.version);
+            setUpdate(null);
+          }}
+        />
+      ) : null}
 
       {/* Drag-and-drop overlay */}
       {isDragging ? (
