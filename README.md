@@ -86,6 +86,9 @@ mdora/
 │   │   └── main.rs
 │   ├── capabilities/
 │   │   └── default.json         ACL: dialog + scoped fs
+│   ├── icons/
+│   │   ├── source/              SVG + 1024px master, regenerate platform set with `npx tauri icon`
+│   │   └── ...                  generated PNG / ICO / ICNS / iOS / Android assets
 │   ├── tauri.conf.json
 │   └── Cargo.toml
 ├── tailwind.config.js
