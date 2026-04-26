@@ -82,7 +82,7 @@ mdora/
 │   └── main.tsx
 ├── src-tauri/
 │   ├── src/
-│   │   ├── lib.rs               Tauri builder + Rust commands
+│   │   ├── lib.rs               Tauri builder + native menu
 │   │   └── main.rs
 │   ├── capabilities/
 │   │   └── default.json         ACL: dialog + scoped fs
@@ -93,6 +93,8 @@ mdora/
 ```
 
 ## Notes
+
+Mermaid runs with `securityLevel: "strict"` and the rendered SVG is parsed in an isolated document via `DOMParser` before being attached to the live tree, so a malicious `.md` file cannot inject script through node labels, tooltips, or `foreignObject`. `react-markdown` is configured **without** `rehype-raw` so raw HTML inside markdown is rendered as text, not live DOM. A strict `Content-Security-Policy` is enforced at the Tauri level (`default-src 'self'`, no remote `connect-src`).
 
 Mermaid is re-initialized on every theme switch so existing SVGs are regenerated with the right palette. Mermaid blocks are identified by the ` ```mermaid ` fence, so you can freely mix code and diagrams in the same document.
 
