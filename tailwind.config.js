@@ -39,9 +39,9 @@ export default {
           950: "#0c0c0a",
         },
         accent: {
-          DEFAULT: "#10b981",
-          muted: "#0f8a6a",
-          glow: "#34d399",
+          DEFAULT: "#a85841",
+          muted: "#7a3b2a",
+          glow: "#cf7e63",
         },
       },
       maxWidth: {

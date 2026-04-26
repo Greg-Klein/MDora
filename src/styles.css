@@ -11,8 +11,9 @@
   --text-faint: #a4a09a;
   --border: #e7e5e0;
   --border-strong: #d2cfc8;
-  --accent: #0f8a6a;
-  --accent-soft: rgba(15, 138, 106, 0.08);
+  --accent: #a85841;
+  --accent-strong: #7a3b2a;
+  --accent-soft: rgba(168, 88, 65, 0.09);
 
   --hl-keyword: #8c2a8a;
   --hl-string: #0a7060;
@@ -32,8 +33,9 @@
   --text-faint: #73706b;
   --border: #26241f;
   --border-strong: #3a3835;
-  --accent: #34d399;
-  --accent-soft: rgba(52, 211, 153, 0.10);
+  --accent: #cf7e63;
+  --accent-strong: #cf7e63;
+  --accent-soft: rgba(207, 126, 99, 0.12);
 
   --hl-keyword: #d987d6;
   --hl-string: #6ee7b7;
@@ -282,13 +284,14 @@ button {
 .btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
 .btn:active { transform: translateY(1px); }
 .btn[data-variant="primary"] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #06281f;
+  background: transparent;
+  border: 1.5px solid var(--accent);
+  color: var(--accent-strong);
+  font-weight: 500;
 }
-.dark .btn[data-variant="primary"] { color: #062018; }
 .btn[data-variant="primary"]:hover {
-  background: color-mix(in oklab, var(--accent) 90%, white);
+  background: var(--accent-soft);
+  border-color: var(--accent);
 }
 .btn-ghost {
   height: 32px;
