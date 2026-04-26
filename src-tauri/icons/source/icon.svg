@@ -1,0 +1,42 @@
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="paper" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fafaf9"/>
+      <stop offset="55%" stop-color="#f4f0e7"/>
+      <stop offset="100%" stop-color="#ece5d6"/>
+    </linearGradient>
+    <linearGradient id="topGloss" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.65"/>
+      <stop offset="22%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="bottomShade" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="78%" stop-color="#3a2520" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#3a2520" stop-opacity="0.07"/>
+    </linearGradient>
+    <clipPath id="squircle">
+      <rect x="0" y="0" width="1024" height="1024" rx="232" ry="232"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#squircle)">
+    <rect x="0" y="0" width="1024" height="1024" fill="url(#paper)"/>
+    <rect x="0" y="0" width="1024" height="1024" fill="url(#topGloss)"/>
+    <rect x="0" y="0" width="1024" height="1024" fill="url(#bottomShade)"/>
+
+    <text x="496" y="640"
+          font-family="Big Caslon, 'Baskerville', 'Hoefler Text', Georgia, serif"
+          font-size="500"
+          font-weight="400"
+          font-style="italic"
+          text-anchor="middle"
+          letter-spacing="-8">
+      <tspan fill="#a85841">M</tspan><tspan fill="#3a2520">d</tspan>
+    </text>
+
+    <rect x="332" y="730" width="360" height="5" rx="2.5" fill="#a85841" opacity="0.35"/>
+    <rect x="412" y="760" width="200" height="5" rx="2.5" fill="#a85841" opacity="0.18"/>
+
+    <rect x="0" y="0" width="1024" height="1024" rx="232" ry="232"
+          fill="none" stroke="#3a2520" stroke-opacity="0.08" stroke-width="2"/>
+  </g>
+</svg>
