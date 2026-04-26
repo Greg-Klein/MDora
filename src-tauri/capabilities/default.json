@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Capability for the main window: open and read markdown files",
+  "description": "Capability for the main window: open and read markdown files chosen by the user",
   "windows": ["main"],
   "permissions": [
     "core:default",
@@ -10,17 +10,6 @@
     "dialog:allow-save",
     "fs:default",
     "fs:allow-read-text-file",
-    "fs:allow-write-text-file",
-    {
-      "identifier": "fs:scope",
-      "allow": [
-        { "path": "$HOME/**" },
-        { "path": "$DESKTOP/**" },
-        { "path": "$DOCUMENT/**" },
-        { "path": "$DOWNLOAD/**" },
-        { "path": "/**/*.md" },
-        { "path": "/**/*.markdown" }
-      ]
-    }
+    "fs:allow-write-text-file"
   ]
 }

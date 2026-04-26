@@ -1,7 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
-import rehypeRaw from "rehype-raw";
 import { MermaidBlock } from "./MermaidBlock";
 
 interface Props {
@@ -14,24 +13,15 @@ export function MarkdownView({ source, themeKey }: Props) {
     <article className="prose">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw, rehypeHighlight]}
+        rehypePlugins={[rehypeHighlight]}
         components={{
           code({ className, children, ...props }) {
-            const text = String(children ?? "").replace(/\n$/, "");
             const lang = /language-(\w+)/.exec(className || "")?.[1];
-            const isInline = !className || !className.startsWith("language-");
-
             if (lang === "mermaid") {
+              const text = String(children ?? "").replace(/\n$/, "");
               return <MermaidBlock chart={text} themeKey={themeKey} />;
             }
-            if (isInline) {
-              return <code className={className} {...props}>{children}</code>;
-            }
-            return (
-              <code className={className} {...props}>
-                {children}
-              </code>
-            );
+            return <code className={className} {...props}>{children}</code>;
           },
         }}
       >

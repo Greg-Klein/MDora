@@ -51,13 +51,16 @@ export default function App() {
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
+  const dirty = content !== originalContent;
+  const hasContent = content.length > 0;
+
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
     localStorage.setItem("mdora.theme", theme);
     mermaid.initialize({
       startOnLoad: false,
       theme: theme === "dark" ? "dark" : "default",
-      securityLevel: "loose",
+      securityLevel: "strict",
       fontFamily: '"Geist", ui-sans-serif, system-ui, sans-serif',
     });
   }, [theme]);
@@ -85,9 +88,8 @@ export default function App() {
           { name: "All", extensions: ["*"] },
         ],
       });
-      if (!selected || Array.isArray(selected)) return;
-      const path = typeof selected === "string" ? selected : (selected as { path: string }).path;
-      await loadFromPath(path);
+      if (typeof selected !== "string") return;
+      await loadFromPath(selected);
     } catch (e: unknown) {
       setErrorMsg(e instanceof Error ? e.message : String(e));
     }
@@ -102,8 +104,8 @@ export default function App() {
           filters: [{ name: "Markdown", extensions: ["md"] }],
           defaultPath: "untitled.md",
         });
-        if (!chosen) return;
-        target = typeof chosen === "string" ? chosen : (chosen as { path: string }).path;
+        if (typeof chosen !== "string") return;
+        target = chosen;
       }
       await writeTextFile(target, content);
       setFilePath(target);
@@ -113,10 +115,11 @@ export default function App() {
     }
   }, [content, filePath]);
 
-  const handleReload = useCallback(async () => {
+  const handleReload = async () => {
     if (!filePath) return;
+    if (dirty && !window.confirm("Discard unsaved changes and reload from disk?")) return;
     await loadFromPath(filePath);
-  }, [filePath, loadFromPath]);
+  };
 
   // Tauri drag-and-drop file handler
   useEffect(() => {
@@ -131,13 +134,12 @@ export default function App() {
             setIsDragging(false);
           } else if (p.type === "drop") {
             setIsDragging(false);
-            const path = p.paths?.[0];
-            if (!path) return;
-            if (!MD_RE.test(path)) {
+            const mdPath = p.paths?.find((x) => MD_RE.test(x));
+            if (!mdPath) {
               setErrorMsg("Only .md / .markdown / .mdx files are supported");
               return;
             }
-            await loadFromPath(path);
+            await loadFromPath(mdPath);
           }
         });
       } catch {
@@ -241,35 +243,26 @@ export default function App() {
     parentEl?.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [searchOpen, searchQuery, searchIndex, content, mode, theme]);
 
-  const stepSearch = useCallback((delta: number) => {
+  const stepSearch = (delta: number) => {
     setSearchIndex((i) => {
       if (searchCount === 0) return 0;
       return ((i + delta) % searchCount + searchCount) % searchCount;
     });
-  }, [searchCount]);
+  };
 
-  const dirty = content !== originalContent;
-  const hasContent = content.length > 0;
   const wordCount = useMemo(() => {
     if (!hasContent) return 0;
     return content.trim().split(/\s+/).filter(Boolean).length;
   }, [content, hasContent]);
 
   return (
-    <div className="h-full flex flex-col relative" style={{ background: "var(--bg)" }}>
+    <div className="app-shell h-full flex flex-col relative">
       {/* Toolbar */}
       <header className="toolbar sticky top-0 z-30 flex items-center px-4 gap-3 select-none">
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          <span style={{
-            color: "var(--text-faint)",
-            fontFamily: '"Geist Mono", monospace',
-            fontSize: 12,
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}>
+          <span className="toolbar-filename">
             {filePath ? basename(filePath) : hasContent ? "untitled.md" : ""}
-            {dirty ? <span style={{ color: "var(--accent)", marginLeft: 6 }}>●</span> : null}
+            {dirty ? <span className="dirty-dot">●</span> : null}
           </span>
         </div>
 
@@ -281,7 +274,6 @@ export default function App() {
             className="btn-ghost"
             onClick={handleSave}
             disabled={!hasContent}
-            style={!hasContent ? { opacity: 0.4, cursor: "not-allowed" } : undefined}
             title="Save (Cmd/Ctrl+S)"
             aria-label="Save"
           >
@@ -291,18 +283,16 @@ export default function App() {
             className="btn-ghost"
             onClick={handleReload}
             disabled={!filePath}
-            style={!filePath ? { opacity: 0.4, cursor: "not-allowed" } : undefined}
             title="Reload from disk"
             aria-label="Reload from disk"
           >
             <ArrowsClockwise size={16} weight="regular" />
           </button>
-          <span style={{ width: 1, height: 18, background: "var(--border)", margin: "0 4px" }} />
+          <span className="toolbar-divider" />
           <button
             className="btn-ghost"
             onClick={() => setMode((m) => (m === "edit" ? "read" : "edit"))}
             disabled={!hasContent}
-            style={!hasContent ? { opacity: 0.4, cursor: "not-allowed" } : undefined}
             title="Toggle edit (Cmd/Ctrl+E)"
             aria-label="Toggle edit"
             data-active={mode === "edit"}
@@ -351,17 +341,11 @@ export default function App() {
 
       {/* Status bar */}
       <footer className="statusbar flex items-center px-4 gap-4 select-none">
-        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {filePath ?? "no file"}
-        </span>
-        {errorMsg ? (
-          <span style={{ color: "var(--hl-number)" }}>{errorMsg}</span>
-        ) : null}
+        <span className="statusbar-path">{filePath ?? "no file"}</span>
+        {errorMsg ? <span className="statusbar-error">{errorMsg}</span> : null}
         <span>{wordCount.toLocaleString()} words</span>
         <span>{content.length.toLocaleString()} chars</span>
-        <span style={{ textTransform: "uppercase", letterSpacing: "0.06em" }}>
-          {mode}
-        </span>
+        <span className="statusbar-mode">{mode}</span>
       </footer>
 
       {/* Drag-and-drop overlay */}
@@ -388,7 +372,7 @@ function ReadPane({
 }) {
   return (
     <div className="flex-1 min-h-0 overflow-auto">
-      <div ref={contentRef} className="mx-auto py-12 px-8 rise" style={{ maxWidth: "min(72ch, 100%)" }}>
+      <div ref={contentRef} className="read-content mx-auto py-12 px-8 rise">
         <MarkdownView source={content} themeKey={themeKey} />
       </div>
     </div>
@@ -409,9 +393,8 @@ function EditPane({
   contentRef: React.MutableRefObject<HTMLDivElement | null>;
 }) {
   return (
-    <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2"
-         style={{ borderTop: "1px solid var(--border)" }}>
-      <div className="min-h-0 overflow-auto" style={{ borderRight: "1px solid var(--border)" }}>
+    <div className="edit-grid flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2">
+      <div className="edit-pane-left min-h-0 overflow-auto">
         <textarea
           ref={editorRef}
           className="editor-pane"
@@ -422,8 +405,8 @@ function EditPane({
           placeholder="Write some markdown..."
         />
       </div>
-      <div className="min-h-0 overflow-auto" style={{ background: "var(--bg)" }}>
-        <div ref={contentRef} className="mx-auto py-10 px-8" style={{ maxWidth: "min(70ch, 100%)" }}>
+      <div className="edit-pane-right min-h-0 overflow-auto">
+        <div ref={contentRef} className="edit-content mx-auto py-10 px-8">
           <MarkdownView source={content} themeKey={themeKey} />
         </div>
       </div>

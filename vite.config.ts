@@ -1,7 +1,8 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// @ts-expect-error process is a nodejs global
+declare const process: { env: { TAURI_DEV_HOST?: string } };
+
 const host = process.env.TAURI_DEV_HOST;
 
 export default defineConfig(async () => ({

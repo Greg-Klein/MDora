@@ -1,8 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import mermaid from "mermaid";
-
-let counter = 0;
-const nextId = () => `mdora-mmd-${++counter}`;
 
 interface Props {
   chart: string;
@@ -11,16 +8,24 @@ interface Props {
 
 export function MermaidBlock({ chart, themeKey }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const idRef = useRef<string>(nextId());
+  const baseId = useId().replace(/[^a-zA-Z0-9_-]/g, "");
+  const renderCount = useRef(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const { svg } = await mermaid.render(idRef.current, chart);
+        renderCount.current += 1;
+        const id = `mdora-mmd-${baseId}-${renderCount.current}`;
+        const { svg } = await mermaid.render(id, chart);
         if (cancelled || !containerRef.current) return;
-        containerRef.current.innerHTML = svg;
+        // Parse the SVG in an isolated document so any inert markup never executes,
+        // then import the node into the live document. Defense-in-depth on top of
+        // mermaid's strict securityLevel.
+        const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
+        const node = document.importNode(doc.documentElement, true);
+        containerRef.current.replaceChildren(node);
         setError(null);
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
@@ -30,14 +35,10 @@ export function MermaidBlock({ chart, themeKey }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [chart, themeKey]);
+  }, [chart, themeKey, baseId]);
 
   if (error) {
-    return (
-      <pre className="mermaid-card" style={{ color: "var(--hl-number)", fontSize: "0.85em" }}>
-        Mermaid error: {error}
-      </pre>
-    );
+    return <pre className="mermaid-card mermaid-error">Mermaid error: {error}</pre>;
   }
 
   return <div className="mermaid-card" ref={containerRef} />;
