@@ -12,6 +12,10 @@
     "fs:allow-read-text-file",
     "fs:allow-write-text-file",
     {
+      "identifier": "fs:scope",
+      "allow": [{ "path": "**" }]
+    },
+    {
       "identifier": "opener:allow-open-url",
       "allow": [{ "url": "https://github.com/Greg-Klein/MDora/releases/*" }]
     }
