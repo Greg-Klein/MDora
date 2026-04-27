@@ -4,6 +4,7 @@ import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { listen } from "@tauri-apps/api/event";
 import mermaid from "mermaid";
 import {
   PencilSimple,
@@ -150,6 +151,30 @@ export default function App() {
       cancelled = true;
     };
   }, []);
+
+  // OS file-association handoff: drain any pending paths the backend buffered
+  // before the webview was ready, then listen for new ones while running.
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
+    (async () => {
+      try {
+        const pending = (await invoke<string[]>("take_pending_files")) ?? [];
+        const first = pending.find((p) => MD_RE.test(p));
+        if (first) await loadFromPath(first);
+
+        unlisten = await listen<string[]>("mdora://open-file", async (event) => {
+          const paths = event.payload ?? [];
+          const next = paths.find((p) => MD_RE.test(p));
+          if (next) await loadFromPath(next);
+        });
+      } catch {
+        // Not running under Tauri (browser dev). Ignore.
+      }
+    })();
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, [loadFromPath]);
 
   // Tauri drag-and-drop file handler
   useEffect(() => {

@@ -9,7 +9,7 @@ Cross-platform desktop app built with [Tauri v2](https://v2.tauri.app/), so it s
 
 ## Features
 
-- Open `.md` / `.markdown` / `.mdx` files via native dialog or drag-and-drop on the window
+- Open `.md` / `.markdown` / `.mdx` files via native dialog, drag-and-drop, or as the OS-registered handler (Finder "Open With", Windows / Linux file association)
 - GitHub Flavored Markdown rendering: tables, task lists, strikethrough, autolinks, footnotes
 - Live Mermaid graphs: flowcharts, sequence, class, ER, gantt, journey, C4, state, gitGraph
 - Syntax highlighting via highlight.js
@@ -107,6 +107,8 @@ In-document search uses the [CSS Custom Highlight API](https://developer.mozilla
 The filesystem scope is limited to paths the user explicitly picks via the open / save dialog (Tauri grants ephemeral scopes for those). The static `fs:scope` is intentionally empty so a malicious `.md` file cannot reach anything else. If you need to widen it, edit `src-tauri/capabilities/default.json`.
 
 Update detection runs at startup from the Rust side (`src-tauri/src/updater.rs`), so the frontend CSP stays `default-src 'self'` with no remote `connect-src`. It hits `api.github.com/repos/Greg-Klein/MDora/releases/latest`, compares `tag_name` to the bundled `package_info().version` via `semver`, and emits an `UpdateInfo` payload only when a strictly greater version exists (drafts and prereleases ignored). The banner uses `tauri-plugin-opener` with a permission scoped to `github.com/Greg-Klein/MDora/releases/*`, so it cannot open arbitrary URLs. Dismissals are remembered per-version in `localStorage` so the same release does not nag twice.
+
+MDora declares a file association for `.md` / `.markdown` / `.mdx` (`bundle.fileAssociations` in `tauri.conf.json`, `LSHandlerRank: Alternate`). After installing the bundled `.app` / `.exe` / `AppImage`, the OS lists MDora in the "Open With" menu, and you can set it as default through Finder / Explorer. On macOS, file paths arrive via `RunEvent::Opened`; on Windows / Linux, via `argv`. In both cases the backend buffers them in app state and emits a `mdora://open-file` event, which `App.tsx` drains on mount and listens to while running. Dev (`npm run tauri dev`) launches an unbundled binary so the OS won't route files to it; test associations against a `npm run tauri build` artifact.
 
 ## License
 

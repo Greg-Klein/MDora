@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "MDora",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "identifier": "com.mdora.app",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -33,6 +33,20 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": ["md", "markdown", "mdx"],
+        "name": "Markdown",
+        "description": "Markdown document",
+        "mimeType": "text/markdown",
+        "rank": "Alternate",
+        "role": "Editor",
+        "exportedType": {
+          "identifier": "com.mdora.app.markdown",
+          "conformsTo": ["public.plain-text"]
+        }
+      }
     ],
     "macOS": {
       "dmg": {
