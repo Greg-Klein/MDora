@@ -26,18 +26,19 @@ Cross-platform desktop app built with [Tauri v2](https://v2.tauri.app/), so it s
 | --------------- | ------------------------------------ |
 | Desktop shell   | Tauri v2                             |
 | Backend         | Rust 1.95 + `tauri-plugin-fs/dialog` |
-| Frontend        | Vite 5 + React 18 + TypeScript 5.6   |
+| Frontend        | Vite 8 + React 18 + TypeScript 5.6   |
 | Markdown engine | `react-markdown` + `remark-gfm`      |
 | Code highlight  | `rehype-highlight` (highlight.js 11) |
 | Diagrams        | `mermaid` 11                         |
 | Styling         | Tailwind v3 + custom CSS variables   |
 | Icons           | `@phosphor-icons/react`              |
+| Tests           | Vitest 4 + Testing Library + jsdom   |
 
 ## Install
 
 Prerequisites:
 
-- Node 18+ and npm
+- Node 20.19+ or 22.12+ (Vite 8 requirement) and npm
 - Rust stable (`rustup` recommended)
 - macOS: Xcode Command Line Tools
 
@@ -45,6 +46,15 @@ Prerequisites:
 git clone <repo> mdora && cd mdora
 npm install
 ```
+
+## Test
+
+```bash
+npm test           # one-shot
+npm run test:watch # watch mode
+```
+
+Vitest + Testing Library + jsdom. Behavioural tests live next to the components (`*.test.tsx`).
 
 ## Run in dev
 
@@ -74,11 +84,14 @@ The binary lands in `src-tauri/target/release/mdora` (~10 MB).
 mdora/
 ├── src/
 │   ├── App.tsx                  Shell, toolbar, shortcuts, search
+│   ├── App.test.tsx             Shell behaviour (Tauri APIs mocked)
 │   ├── components/
 │   │   ├── MarkdownView.tsx     Markdown rendering pipeline
 │   │   ├── MermaidBlock.tsx     Mermaid render + theme reactivity
 │   │   ├── SearchBar.tsx        Find-in-document overlay
-│   │   └── EmptyState.tsx       Welcome screen
+│   │   ├── EmptyState.tsx       Welcome screen
+│   │   └── *.test.tsx           Per-component behavioural tests
+│   ├── test/setup.ts            Vitest setup (jest-dom matchers, cleanup)
 │   ├── styles.css               Theme tokens + prose CSS + search highlights
 │   └── main.tsx
 ├── src-tauri/
