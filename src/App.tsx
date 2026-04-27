@@ -371,7 +371,7 @@ export default function App() {
         {!hasContent ? (
           <EmptyState onOpen={handleOpen} />
         ) : mode === "read" ? (
-          <ReadPane content={content} themeKey={theme} contentRef={contentRef} />
+          <ReadPane content={content} themeKey={theme} contentRef={contentRef} filePath={filePath} />
         ) : (
           <EditPane
             content={content}
@@ -379,6 +379,7 @@ export default function App() {
             themeKey={theme}
             editorRef={editorRef}
             contentRef={contentRef}
+            filePath={filePath}
           />
         )}
         <SearchBar
@@ -435,15 +436,17 @@ function ReadPane({
   content,
   themeKey,
   contentRef,
+  filePath,
 }: {
   content: string;
   themeKey: Theme;
   contentRef: React.MutableRefObject<HTMLDivElement | null>;
+  filePath: string | null;
 }) {
   return (
     <div className="flex-1 min-h-0 overflow-auto">
       <div ref={contentRef} className="read-content mx-auto py-12 px-8 rise">
-        <MarkdownView source={content} themeKey={themeKey} />
+        <MarkdownView source={content} themeKey={themeKey} filePath={filePath} />
       </div>
     </div>
   );
@@ -455,29 +458,72 @@ function EditPane({
   themeKey,
   editorRef,
   contentRef,
+  filePath,
 }: {
   content: string;
   onChange: (s: string) => void;
   themeKey: Theme;
   editorRef: React.MutableRefObject<HTMLTextAreaElement | null>;
   contentRef: React.MutableRefObject<HTMLDivElement | null>;
+  filePath: string | null;
 }) {
+  const previewScrollRef = useRef<HTMLDivElement | null>(null);
+  const ignoreNextScrollRef = useRef<HTMLElement | null>(null);
+
+  const syncScroll = (target: HTMLElement, source: HTMLElement) => {
+    const srcMax = source.scrollHeight - source.clientHeight;
+    const tgtMax = target.scrollHeight - target.clientHeight;
+    if (srcMax <= 0 || tgtMax <= 0) return;
+    const ratio = source.scrollTop / srcMax;
+    const next = ratio * tgtMax;
+    if (Math.abs(target.scrollTop - next) < 0.5) return;
+    ignoreNextScrollRef.current = target;
+    target.scrollTop = next;
+  };
+
+  const handleEditorScroll = () => {
+    const editor = editorRef.current;
+    const preview = previewScrollRef.current;
+    if (!editor || !preview) return;
+    if (ignoreNextScrollRef.current === editor) {
+      ignoreNextScrollRef.current = null;
+      return;
+    }
+    syncScroll(preview, editor);
+  };
+
+  const handlePreviewScroll = () => {
+    const editor = editorRef.current;
+    const preview = previewScrollRef.current;
+    if (!editor || !preview) return;
+    if (ignoreNextScrollRef.current === preview) {
+      ignoreNextScrollRef.current = null;
+      return;
+    }
+    syncScroll(editor, preview);
+  };
+
   return (
     <div className="edit-grid flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2">
-      <div className="edit-pane-left min-h-0 overflow-auto">
+      <div className="edit-pane-left min-h-0 overflow-hidden">
         <textarea
           ref={editorRef}
           className="editor-pane"
           value={content}
           onChange={(e) => onChange(e.target.value)}
+          onScroll={handleEditorScroll}
           spellCheck={false}
           autoFocus
           placeholder="Write some markdown..."
         />
       </div>
-      <div className="edit-pane-right min-h-0 overflow-auto">
+      <div
+        ref={previewScrollRef}
+        className="edit-pane-right min-h-0 overflow-auto"
+        onScroll={handlePreviewScroll}
+      >
         <div ref={contentRef} className="edit-content mx-auto py-10 px-8">
-          <MarkdownView source={content} themeKey={themeKey} />
+          <MarkdownView source={content} themeKey={themeKey} filePath={filePath} />
         </div>
       </div>
     </div>
