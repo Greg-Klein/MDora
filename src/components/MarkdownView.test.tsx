@@ -8,6 +8,13 @@ vi.mock("./MermaidBlock", () => ({
   ),
 }));
 
+vi.mock("@tauri-apps/api/core", () => ({
+  convertFileSrc: (p: string) => {
+    const prefix = p.startsWith("/") ? "" : "/";
+    return "asset://localhost" + prefix + encodeURI(p);
+  },
+}));
+
 describe("MarkdownView", () => {
   it("renders basic markdown as semantic HTML", () => {
     render(<MarkdownView source={"# Title\n\nHello **world**"} themeKey="light" />);
@@ -42,5 +49,194 @@ describe("MarkdownView", () => {
     render(<MarkdownView source={md} themeKey="light" />);
     expect(document.querySelector("script")).toBeNull();
     expect(screen.getByText("hello")).toBeInTheDocument();
+  });
+
+  it("passes through https image sources unchanged", () => {
+    const { container } = render(
+      <MarkdownView
+        source={"![remote](https://example.com/x.png)"}
+        themeKey="light"
+        filePath="/Users/g/notes/doc.md"
+      />,
+    );
+    const img = container.querySelector("img");
+    expect(img?.getAttribute("src")).toBe("https://example.com/x.png");
+  });
+
+  it("passes through http image sources unchanged", () => {
+    const { container } = render(
+      <MarkdownView
+        source={"![remote](http://example.com/x.png)"}
+        themeKey="light"
+        filePath="/Users/g/notes/doc.md"
+      />,
+    );
+    const img = container.querySelector("img");
+    expect(img?.getAttribute("src")).toBe("http://example.com/x.png");
+  });
+
+  it("passes through data: image sources unchanged", () => {
+    const md = "![inline](data:image/png;base64,xxx)";
+    const { container } = render(
+      <MarkdownView source={md} themeKey="light" filePath="/Users/g/notes/doc.md" />,
+    );
+    const img = container.querySelector("img");
+    expect(img?.getAttribute("src")).toBe("data:image/png;base64,xxx");
+  });
+
+  it("rewrites a sibling relative image to an asset URL", () => {
+    const { container } = render(
+      <MarkdownView
+        source={"![local](./photo.png)"}
+        themeKey="light"
+        filePath="/Users/g/notes/doc.md"
+      />,
+    );
+    const img = container.querySelector("img");
+    expect(img?.getAttribute("src")).toBe(
+      "asset://localhost/Users/g/notes/photo.png",
+    );
+  });
+
+  it("rewrites a parent-directory relative image to an asset URL", () => {
+    const { container } = render(
+      <MarkdownView
+        source={"![logo](../shared/logo.svg)"}
+        themeKey="light"
+        filePath="/Users/g/notes/doc.md"
+      />,
+    );
+    const img = container.querySelector("img");
+    expect(img?.getAttribute("src")).toBe(
+      "asset://localhost/Users/g/shared/logo.svg",
+    );
+  });
+
+  it("rewrites an absolute filesystem image to an asset URL", () => {
+    const { container } = render(
+      <MarkdownView
+        source={"![abs](/abs/img.png)"}
+        themeKey="light"
+        filePath="/Users/g/notes/doc.md"
+      />,
+    );
+    const img = container.querySelector("img");
+    expect(img?.getAttribute("src")).toBe("asset://localhost/abs/img.png");
+  });
+
+  it("leaves relative images untouched when filePath is null", () => {
+    const { container } = render(
+      <MarkdownView
+        source={"![local](./photo.png)"}
+        themeKey="light"
+        filePath={null}
+      />,
+    );
+    const img = container.querySelector("img");
+    expect(img?.getAttribute("src")).toBe("./photo.png");
+  });
+
+  it("strips query strings on relative image paths before resolving", () => {
+    const { container } = render(
+      <MarkdownView
+        source={"![v](./photo.png?v=2)"}
+        themeKey="light"
+        filePath="/Users/g/notes/doc.md"
+      />,
+    );
+    const img = container.querySelector("img");
+    expect(img?.getAttribute("src")).toBe(
+      "asset://localhost/Users/g/notes/photo.png",
+    );
+  });
+
+  it("strips fragment on relative image paths before resolving", () => {
+    const { container } = render(
+      <MarkdownView
+        source={"![v](./photo.png#anchor)"}
+        themeKey="light"
+        filePath="/Users/g/notes/doc.md"
+      />,
+    );
+    const img = container.querySelector("img");
+    expect(img?.getAttribute("src")).toBe(
+      "asset://localhost/Users/g/notes/photo.png",
+    );
+  });
+
+  it("decodes percent-encoded characters before resolving", () => {
+    const { container } = render(
+      <MarkdownView
+        source={"![v](./my%20image.png)"}
+        themeKey="light"
+        filePath="/Users/g/notes/doc.md"
+      />,
+    );
+    const img = container.querySelector("img");
+    expect(img?.getAttribute("src")).toBe(
+      "asset://localhost/Users/g/notes/my%20image.png",
+    );
+  });
+
+  it("decodes multi-byte percent-encoded characters", () => {
+    const { container } = render(
+      <MarkdownView
+        source={"![v](./caf%C3%A9.png)"}
+        themeKey="light"
+        filePath="/Users/g/notes/doc.md"
+      />,
+    );
+    const img = container.querySelector("img");
+    expect(img?.getAttribute("src")).toBe(
+      "asset://localhost/Users/g/notes/caf%C3%A9.png",
+    );
+  });
+
+  it("blanks out javascript: image sources", () => {
+    const { container } = render(
+      <MarkdownView
+        source={"![x](javascript:alert(1))"}
+        themeKey="light"
+        filePath="/Users/g/notes/doc.md"
+      />,
+    );
+    const img = container.querySelector("img");
+    expect(img?.getAttribute("src") || "").toBe("");
+  });
+
+  it("blanks out vbscript: image sources", () => {
+    const { container } = render(
+      <MarkdownView
+        source={"![x](vbscript:msgbox(1))"}
+        themeKey="light"
+        filePath="/Users/g/notes/doc.md"
+      />,
+    );
+    const img = container.querySelector("img");
+    expect(img?.getAttribute("src") || "").toBe("");
+  });
+
+  it("blanks out file:// image sources", () => {
+    const { container } = render(
+      <MarkdownView
+        source={"![x](file:///etc/passwd)"}
+        themeKey="light"
+        filePath="/Users/g/notes/doc.md"
+      />,
+    );
+    const img = container.querySelector("img");
+    expect(img?.getAttribute("src") || "").toBe("");
+  });
+
+  it("blanks out mailto: image sources", () => {
+    const { container } = render(
+      <MarkdownView
+        source={"![x](mailto:victim@example.com)"}
+        themeKey="light"
+        filePath="/Users/g/notes/doc.md"
+      />,
+    );
+    const img = container.querySelector("img");
+    expect(img?.getAttribute("src") || "").toBe("");
   });
 });

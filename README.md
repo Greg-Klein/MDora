@@ -11,6 +11,7 @@ Cross-platform desktop app built with [Tauri v2](https://v2.tauri.app/), so it s
 
 - Open `.md` / `.markdown` / `.mdx` files via native dialog, drag-and-drop, or as the OS-registered handler (Finder "Open With", Windows / Linux file association)
 - GitHub Flavored Markdown rendering: tables, task lists, strikethrough, autolinks, footnotes
+- Image rendering: local files relative to the markdown (via Tauri's asset protocol), absolute filesystem paths, and remote `https:` / `http:` / `data:` sources
 - Live Mermaid graphs: flowcharts, sequence, class, ER, gantt, journey, C4, state, gitGraph
 - Syntax highlighting via highlight.js
 - In-document search (`Cmd/Ctrl+F`): case-insensitive, current/total counter, Enter / Shift+Enter to navigate, Esc to close
@@ -86,11 +87,14 @@ mdora/
 │   ├── App.tsx                  Shell, toolbar, shortcuts, search
 │   ├── App.test.tsx             Shell behaviour (Tauri APIs mocked)
 │   ├── components/
-│   │   ├── MarkdownView.tsx     Markdown rendering pipeline
+│   │   ├── MarkdownView.tsx     Markdown rendering pipeline + image resolver
 │   │   ├── MermaidBlock.tsx     Mermaid render + theme reactivity
 │   │   ├── SearchBar.tsx        Find-in-document overlay
 │   │   ├── EmptyState.tsx       Welcome screen
 │   │   └── *.test.tsx           Per-component behavioural tests
+│   ├── lib/
+│   │   ├── paths.ts             Cross-platform dirname + image path resolution
+│   │   └── paths.test.ts
 │   ├── test/setup.ts            Vitest setup (jest-dom matchers, cleanup)
 │   ├── styles.css               Theme tokens + prose CSS + search highlights
 │   └── main.tsx
@@ -114,6 +118,8 @@ mdora/
 Mermaid runs with `securityLevel: "strict"` and the rendered SVG is parsed in an isolated document via `DOMParser` before being attached to the live tree, so a malicious `.md` file cannot inject script through node labels, tooltips, or `foreignObject`. `react-markdown` is configured **without** `rehype-raw` so raw HTML inside markdown is rendered as text, not live DOM. A strict `Content-Security-Policy` is enforced at the Tauri level (`default-src 'self'`, no remote `connect-src`).
 
 Mermaid is re-initialized on every theme switch so existing SVGs are regenerated with the right palette. Mermaid blocks are identified by the ` ```mermaid ` fence, so you can freely mix code and diagrams in the same document.
+
+Images are resolved through a custom `img` renderer in `MarkdownView`. Remote sources (`https:`, `http:`, `data:`, `blob:`, `asset:`) pass through unchanged. Anything else is treated as a filesystem path: the renderer strips any query string or fragment, decodes any percent-encoded characters once, resolves the path against the directory of the open markdown file, then passes the absolute path through Tauri's `convertFileSrc` so it loads via the asset protocol (`asset://localhost/...` on macOS / Linux, `https://asset.localhost/...` on Windows). The `assetProtocol` scope is `**`, matching the existing `fs:scope`. The CSP `img-src` allows `'self' data: blob: https: http: asset: https://asset.localhost`. A custom `urlTransform` keeps `data:` and `asset:` URLs from being blanked by react-markdown's default sanitizer while still blocking `javascript:`, `vbscript:`, `file:`, `mailto:` and similar schemes whose first colon precedes any slash, query, or fragment.
 
 In-document search uses the [CSS Custom Highlight API](https://developer.mozilla.org/en-US/docs/Web/API/CSS_Custom_Highlight_API) (`CSS.highlights` + `Highlight` ranges) instead of mutating the DOM. No fight with React's reconciler, no extra wrapper elements injected into the rendered Markdown. Requires WebKit 17.2+ / Chromium 105+, which is well within Tauri's modern WebView baseline.
 

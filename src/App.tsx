@@ -371,7 +371,7 @@ export default function App() {
         {!hasContent ? (
           <EmptyState onOpen={handleOpen} />
         ) : mode === "read" ? (
-          <ReadPane content={content} themeKey={theme} contentRef={contentRef} />
+          <ReadPane content={content} themeKey={theme} contentRef={contentRef} filePath={filePath} />
         ) : (
           <EditPane
             content={content}
@@ -379,6 +379,7 @@ export default function App() {
             themeKey={theme}
             editorRef={editorRef}
             contentRef={contentRef}
+            filePath={filePath}
           />
         )}
         <SearchBar
@@ -435,15 +436,17 @@ function ReadPane({
   content,
   themeKey,
   contentRef,
+  filePath,
 }: {
   content: string;
   themeKey: Theme;
   contentRef: React.MutableRefObject<HTMLDivElement | null>;
+  filePath: string | null;
 }) {
   return (
     <div className="flex-1 min-h-0 overflow-auto">
       <div ref={contentRef} className="read-content mx-auto py-12 px-8 rise">
-        <MarkdownView source={content} themeKey={themeKey} />
+        <MarkdownView source={content} themeKey={themeKey} filePath={filePath} />
       </div>
     </div>
   );
@@ -455,12 +458,14 @@ function EditPane({
   themeKey,
   editorRef,
   contentRef,
+  filePath,
 }: {
   content: string;
   onChange: (s: string) => void;
   themeKey: Theme;
   editorRef: React.MutableRefObject<HTMLTextAreaElement | null>;
   contentRef: React.MutableRefObject<HTMLDivElement | null>;
+  filePath: string | null;
 }) {
   return (
     <div className="edit-grid flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2">
@@ -477,7 +482,7 @@ function EditPane({
       </div>
       <div className="edit-pane-right min-h-0 overflow-auto">
         <div ref={contentRef} className="edit-content mx-auto py-10 px-8">
-          <MarkdownView source={content} themeKey={themeKey} />
+          <MarkdownView source={content} themeKey={themeKey} filePath={filePath} />
         </div>
       </div>
     </div>
