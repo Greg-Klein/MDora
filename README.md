@@ -129,6 +129,10 @@ Update detection runs at startup from the Rust side (`src-tauri/src/updater.rs`)
 
 MDora declares a file association for `.md` / `.markdown` / `.mdx` (`bundle.fileAssociations` in `tauri.conf.json`, `LSHandlerRank: Alternate`). After installing the bundled `.app` / `.exe` / `AppImage`, the OS lists MDora in the "Open With" menu, and you can set it as default through Finder / Explorer. On macOS, file paths arrive via `RunEvent::Opened`; on Windows / Linux, via `argv`. In both cases the backend buffers them in app state and emits a `mdora://open-file` event, which `App.tsx` drains on mount and listens to while running. Dev (`npm run tauri dev`) launches an unbundled binary so the OS won't route files to it; test associations against a `npm run tauri build` artifact.
 
+## Releasing
+
+Maintainer-only. Full procedure (version bump, git flow merge, signed DMG build, GitHub release, asset upload) is documented in [`docs/RELEASING.md`](./docs/RELEASING.md).
+
 ## License
 
 MIT. See [`LICENSE`](./LICENSE).
