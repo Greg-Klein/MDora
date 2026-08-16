@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialog";
-import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { readTextFile, writeTextFile, writeFile } from "@tauri-apps/plugin-fs";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { listen } from "@tauri-apps/api/event";
 import mermaid from "mermaid";
+import html2pdf from "html2pdf.js";
 import {
   PencilSimple,
   Sun,
@@ -14,6 +15,7 @@ import {
   FloppyDisk,
   ArrowsClockwise,
   FileText,
+  FilePdf,
   List,
 } from "@phosphor-icons/react";
 import { MarkdownView } from "./components/MarkdownView";
@@ -75,6 +77,7 @@ export default function App() {
   const [searchFocusToken, setSearchFocusToken] = useState(0);
   const [update, setUpdate] = useState<UpdateInfo | null>(null);
   const [tocOpen, setTocOpen] = useState<boolean>(loadInitialTocOpen);
+  const [isExporting, setIsExporting] = useState(false);
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
@@ -227,6 +230,55 @@ export default function App() {
     };
   }, [loadFromPath]);
 
+  const handleExportPdf = useCallback(async () => {
+    const node = contentRef.current;
+    if (!node) return;
+    // The scroll ancestor (`.overflow-auto`, direct parent of contentRef in both
+    // read and edit mode) clips node's content to the viewport height. html2canvas
+    // replays that clip when cloning the live DOM, so it must be lifted too or
+    // anything below the fold at click-time is silently missing from the PDF.
+    const scrollParent = node.parentElement;
+    setErrorMsg(null);
+    setIsExporting(true);
+    try {
+      const defaultName = filePath
+        ? basename(filePath).replace(/\.(md|markdown|mdx)$/i, "") + ".pdf"
+        : "untitled.pdf";
+      const chosen = await saveDialog({
+        filters: [{ name: "PDF", extensions: ["pdf"] }],
+        defaultPath: defaultName,
+      });
+      if (typeof chosen !== "string") return;
+
+      node.classList.add("pdf-export-mode");
+      scrollParent?.classList.add("pdf-export-mode-scroll");
+      try {
+        const arrayBuffer = await html2pdf()
+          .set({
+            margin: [16, 16, 16, 16],
+            image: { type: "jpeg", quality: 0.95 },
+            html2canvas: { backgroundColor: "#ffffff", useCORS: true, allowTaint: true },
+            jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+            pagebreak: {
+              mode: ["css", "legacy"],
+              avoid: ["pre", "table", "blockquote", "img", ".mermaid-card"],
+            },
+          })
+          .from(node)
+          .toPdf()
+          .outputPdf("arraybuffer");
+        await writeFile(chosen, new Uint8Array(arrayBuffer));
+      } finally {
+        node.classList.remove("pdf-export-mode");
+        scrollParent?.classList.remove("pdf-export-mode-scroll");
+      }
+    } catch (e: unknown) {
+      setErrorMsg(e instanceof Error ? e.message : String(e));
+    } finally {
+      setIsExporting(false);
+    }
+  }, [filePath]);
+
   const openSearch = useCallback(() => {
     if (!content) return;
     setSearchOpen(true);
@@ -347,13 +399,19 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-1">
-          <button className="btn-ghost" onClick={handleOpen} title="Open file (Cmd/Ctrl+O)" aria-label="Open file">
+          <button
+            className="btn-ghost"
+            onClick={handleOpen}
+            disabled={isExporting}
+            title="Open file (Cmd/Ctrl+O)"
+            aria-label="Open file"
+          >
             <FolderOpen size={17} weight="regular" />
           </button>
           <button
             className="btn-ghost"
             onClick={handleSave}
-            disabled={!hasContent}
+            disabled={!hasContent || isExporting}
             title="Save (Cmd/Ctrl+S)"
             aria-label="Save"
           >
@@ -362,11 +420,20 @@ export default function App() {
           <button
             className="btn-ghost"
             onClick={handleReload}
-            disabled={!filePath}
+            disabled={!filePath || isExporting}
             title="Reload from disk"
             aria-label="Reload from disk"
           >
             <ArrowsClockwise size={16} weight="regular" />
+          </button>
+          <button
+            className="btn-ghost"
+            onClick={handleExportPdf}
+            disabled={!hasContent || isExporting}
+            title={isExporting ? "Exporting PDF…" : "Export as PDF"}
+            aria-label={isExporting ? "Exporting PDF" : "Export as PDF"}
+          >
+            <FilePdf size={17} weight={isExporting ? "fill" : "regular"} />
           </button>
           <span className="toolbar-divider" />
           <button

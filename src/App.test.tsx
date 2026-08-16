@@ -8,11 +8,12 @@ const mocks = vi.hoisted(() => ({
   saveDialog: vi.fn<(...a: unknown[]) => unknown>(),
   readTextFile: vi.fn<(...a: unknown[]) => unknown>(),
   writeTextFile: vi.fn<(...a: unknown[]) => unknown>(),
+  writeFile: vi.fn<(...a: unknown[]) => unknown>(),
   invoke: vi.fn<(...a: unknown[]) => unknown>(),
   listen: vi.fn<(...a: unknown[]) => Promise<() => void>>(async () => () => {}),
   onDragDropEvent: vi.fn<(...a: unknown[]) => Promise<() => void>>(async () => () => {}),
 }));
-const { openDialog, saveDialog, readTextFile, writeTextFile, invoke } = mocks;
+const { openDialog, saveDialog, readTextFile, writeTextFile, writeFile, invoke } = mocks;
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({
   open: mocks.openDialog,
@@ -22,6 +23,7 @@ vi.mock("@tauri-apps/plugin-dialog", () => ({
 vi.mock("@tauri-apps/plugin-fs", () => ({
   readTextFile: mocks.readTextFile,
   writeTextFile: mocks.writeTextFile,
+  writeFile: mocks.writeFile,
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -43,6 +45,20 @@ vi.mock("@tauri-apps/plugin-opener", () => ({
 vi.mock("mermaid", () => ({
   default: { initialize: vi.fn(), render: vi.fn() },
 }));
+
+const html2pdfMocks = vi.hoisted(() => ({
+  outputPdf: vi.fn<(...a: unknown[]) => unknown>(async () => new ArrayBuffer(8)),
+}));
+
+vi.mock("html2pdf.js", () => {
+  const worker: Record<string, unknown> = {};
+  worker.set = vi.fn(() => worker);
+  worker.from = vi.fn(() => worker);
+  worker.toPdf = vi.fn(() => worker);
+  worker.outputPdf = html2pdfMocks.outputPdf;
+  const html2pdf = vi.fn(() => worker);
+  return { default: html2pdf };
+});
 
 vi.mock("./components/MarkdownView", () => ({
   MarkdownView: ({ source }: { source: string }) => {
@@ -74,8 +90,11 @@ describe("App shell", () => {
     saveDialog.mockReset();
     readTextFile.mockReset();
     writeTextFile.mockReset();
+    writeFile.mockReset();
     invoke.mockReset();
     invoke.mockResolvedValue(null);
+    html2pdfMocks.outputPdf.mockClear();
+    html2pdfMocks.outputPdf.mockImplementation(async () => new ArrayBuffer(8));
   });
 
   it("shows the empty state when no file is loaded", () => {
@@ -88,6 +107,96 @@ describe("App shell", () => {
     expect(screen.getByRole("button", { name: /^save$/i })).toBeDisabled();
     expect(screen.getByRole("button", { name: /reload from disk/i })).toBeDisabled();
     expect(screen.getByRole("button", { name: /toggle edit/i })).toBeDisabled();
+  });
+
+  it("disables the export as PDF button while empty", () => {
+    render(<App />);
+    expect(screen.getByRole("button", { name: /export as pdf/i })).toBeDisabled();
+  });
+
+  it("opens a save dialog with PDF filters when the export as PDF button is clicked", async () => {
+    openDialog.mockResolvedValueOnce("/tmp/notes.md");
+    readTextFile.mockResolvedValueOnce("# Hello");
+    saveDialog.mockResolvedValueOnce("/tmp/notes.pdf");
+    render(<App />);
+    await userEvent.click(screen.getAllByRole("button", { name: /open file/i })[0]);
+    await screen.findByTestId("markdown-stub");
+
+    const exportButton = screen.getByRole("button", { name: /export as pdf/i });
+    expect(exportButton).not.toBeDisabled();
+    await userEvent.click(exportButton);
+
+    expect(saveDialog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        filters: [{ name: "PDF", extensions: ["pdf"] }],
+        defaultPath: "notes.pdf",
+      }),
+    );
+  });
+
+  it("does not write a PDF when the save dialog is cancelled", async () => {
+    openDialog.mockResolvedValueOnce("/tmp/notes.md");
+    readTextFile.mockResolvedValueOnce("# Hello");
+    saveDialog.mockResolvedValueOnce(null);
+    render(<App />);
+    await userEvent.click(screen.getAllByRole("button", { name: /open file/i })[0]);
+    await screen.findByTestId("markdown-stub");
+
+    await userEvent.click(screen.getByRole("button", { name: /export as pdf/i }));
+
+    expect(writeFile).not.toHaveBeenCalled();
+  });
+
+  it("writes the generated PDF bytes to the chosen path", async () => {
+    openDialog.mockResolvedValueOnce("/tmp/notes.md");
+    readTextFile.mockResolvedValueOnce("# Hello");
+    saveDialog.mockResolvedValueOnce("/tmp/notes.pdf");
+    render(<App />);
+    await userEvent.click(screen.getAllByRole("button", { name: /open file/i })[0]);
+    await screen.findByTestId("markdown-stub");
+
+    await userEvent.click(screen.getByRole("button", { name: /export as pdf/i }));
+
+    expect(writeFile).toHaveBeenCalledTimes(1);
+    const [path, data] = writeFile.mock.calls[0];
+    expect(path).toBe("/tmp/notes.pdf");
+    expect(data).toBeInstanceOf(Uint8Array);
+  });
+
+  it("shows an error and re-enables export when writing the PDF fails", async () => {
+    openDialog.mockResolvedValueOnce("/tmp/notes.md");
+    readTextFile.mockResolvedValueOnce("# Hello");
+    saveDialog.mockResolvedValueOnce("/tmp/notes.pdf");
+    writeFile.mockRejectedValueOnce(new Error("disk full"));
+    render(<App />);
+    await userEvent.click(screen.getAllByRole("button", { name: /open file/i })[0]);
+    await screen.findByTestId("markdown-stub");
+
+    const exportButton = screen.getByRole("button", { name: /export as pdf/i });
+    await userEvent.click(exportButton);
+
+    expect(await screen.findByText("disk full")).toBeInTheDocument();
+    expect(exportButton).not.toBeDisabled();
+    expect(document.querySelector(".pdf-export-mode")).toBeNull();
+  });
+
+  it("shows an error and re-enables export when PDF generation fails", async () => {
+    openDialog.mockResolvedValueOnce("/tmp/notes.md");
+    readTextFile.mockResolvedValueOnce("# Hello");
+    saveDialog.mockResolvedValueOnce("/tmp/notes.pdf");
+    html2pdfMocks.outputPdf.mockRejectedValueOnce(new Error("render failed"));
+    render(<App />);
+    await userEvent.click(screen.getAllByRole("button", { name: /open file/i })[0]);
+    await screen.findByTestId("markdown-stub");
+
+    const exportButton = screen.getByRole("button", { name: /export as pdf/i });
+    await userEvent.click(exportButton);
+
+    expect(await screen.findByText("render failed")).toBeInTheDocument();
+    expect(exportButton).not.toBeDisabled();
+    expect(writeFile).not.toHaveBeenCalled();
+    expect(document.querySelector(".pdf-export-mode")).toBeNull();
+    expect(document.querySelector(".pdf-export-mode-scroll")).toBeNull();
   });
 
   it("toggles dark class on the html root when the theme button is clicked", async () => {
@@ -136,6 +245,7 @@ describe("App TOC", () => {
     saveDialog.mockReset();
     readTextFile.mockReset();
     writeTextFile.mockReset();
+    writeFile.mockReset();
     invoke.mockReset();
     invoke.mockResolvedValue(null);
   });
