@@ -20,6 +20,7 @@ Cross-platform desktop app built with [Tauri v2](https://v2.tauri.app/), so it s
 - Light / dark toggle, theme persisted to local storage
 - Read / edit toggle with split-pane live preview and proportional scroll sync between the source and the rendered view
 - Direct save or Save As (toolbar button)
+- PDF export (toolbar button): renders the current document to a real PDF via a native save dialog, keeping live Mermaid diagrams and syntax highlighting
 - Keyboard shortcuts: `Cmd/Ctrl+O` open, `Cmd/Ctrl+S` save, `Cmd/Ctrl+E` toggle edit, `Cmd/Ctrl+F` find, `Cmd/Ctrl+\` toggle TOC, `Cmd/Ctrl+D` toggle theme
 - Update detection: checks GitHub Releases at startup and shows a non-blocking banner when a newer version is available
 
