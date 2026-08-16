@@ -15,10 +15,12 @@ Cross-platform desktop app built with [Tauri v2](https://v2.tauri.app/), so it s
 - Live Mermaid graphs: flowcharts, sequence, class, ER, gantt, journey, C4, state, gitGraph
 - Syntax highlighting via highlight.js
 - In-document search (`Cmd/Ctrl+F`): case-insensitive, current/total counter, Enter / Shift+Enter to navigate, Esc to close
+- Table of contents panel (`Cmd/Ctrl+\`): auto-extracted from headings, scroll-spy highlights the current section, smooth scroll to any heading, indented hierarchy h1 to h6, panel state persisted across sessions
+- Window size and position remembered between launches
 - Light / dark toggle, theme persisted to local storage
 - Read / edit toggle with split-pane live preview and proportional scroll sync between the source and the rendered view
 - Direct save or Save As (toolbar button)
-- Keyboard shortcuts: `Cmd/Ctrl+O` open, `Cmd/Ctrl+S` save, `Cmd/Ctrl+E` toggle edit, `Cmd/Ctrl+F` find, `Cmd/Ctrl+D` toggle theme
+- Keyboard shortcuts: `Cmd/Ctrl+O` open, `Cmd/Ctrl+S` save, `Cmd/Ctrl+E` toggle edit, `Cmd/Ctrl+F` find, `Cmd/Ctrl+\` toggle TOC, `Cmd/Ctrl+D` toggle theme
 - Update detection: checks GitHub Releases at startup and shows a non-blocking banner when a newer version is available
 
 ## Stack

@@ -623,4 +623,67 @@ button {
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 8px; border: 2px solid var(--bg); }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+
+/* --- TOC panel --------------------------------------------------------- */
+.toc-panel {
+  width: 240px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+  padding: 1.25rem 0.75rem 1.5rem;
+  font-family: inherit;
+}
+.toc-title {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 0 0.5rem 0.6rem;
+  margin: 0;
+}
+.toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.toc-list li { margin: 0; }
+.toc-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: color 120ms ease, background-color 120ms ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: inherit;
+}
+.toc-item:hover { color: var(--text); background: var(--surface-2); }
+.toc-item--active {
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 500;
+}
+.toc-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* Compensation for sticky toolbar when scrolling to a heading */
+.prose :is(h1, h2, h3, h4, h5, h6) {
+  scroll-margin-top: 64px;
+}
+
+@media print {
+  .toc-panel { display: none; }
+}
 ::-webkit-scrollbar-track { background: transparent; }

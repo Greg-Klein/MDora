@@ -14,10 +14,12 @@ import {
   FloppyDisk,
   ArrowsClockwise,
   FileText,
+  List,
 } from "@phosphor-icons/react";
 import { MarkdownView } from "./components/MarkdownView";
 import { EmptyState } from "./components/EmptyState";
 import { SearchBar } from "./components/SearchBar";
+import { TocPanel, useHeadings } from "./components/TocPanel";
 import { UpdateBanner } from "./components/UpdateBanner";
 
 interface UpdateInfo {
@@ -27,6 +29,7 @@ interface UpdateInfo {
 }
 
 const DISMISSED_UPDATE_KEY = "mdora.update.dismissed";
+const TOC_OPEN_KEY = "mdora.toc.open";
 
 type Theme = "light" | "dark";
 type Mode = "read" | "edit";
@@ -47,6 +50,16 @@ function loadInitialTheme(): Theme {
   return "light";
 }
 
+function loadInitialTocOpen(): boolean {
+  try {
+    const stored = localStorage.getItem(TOC_OPEN_KEY);
+    if (stored === null) return true;
+    return stored === "true";
+  } catch {
+    return true;
+  }
+}
+
 export default function App() {
   const [theme, setTheme] = useState<Theme>(loadInitialTheme);
   const [mode, setMode] = useState<Mode>("read");
@@ -61,11 +74,19 @@ export default function App() {
   const [searchCount, setSearchCount] = useState(0);
   const [searchFocusToken, setSearchFocusToken] = useState(0);
   const [update, setUpdate] = useState<UpdateInfo | null>(null);
+  const [tocOpen, setTocOpen] = useState<boolean>(loadInitialTocOpen);
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
   const dirty = content !== originalContent;
   const hasContent = content.length > 0;
+  const headings = useHeadings(contentRef, content, mode);
+  const tocAvailable = headings.length >= 2;
+  const tocVisible = tocOpen && hasContent && tocAvailable;
+
+  useEffect(() => {
+    try { localStorage.setItem(TOC_OPEN_KEY, String(tocOpen)); } catch { /* noop */ }
+  }, [tocOpen]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -234,6 +255,10 @@ export default function App() {
         e.preventDefault();
         setTheme((t) => (t === "light" ? "dark" : "light"));
       }
+      else if (e.key === "\\") {
+        e.preventDefault();
+        setTocOpen((v) => !v);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -346,6 +371,24 @@ export default function App() {
           <span className="toolbar-divider" />
           <button
             className="btn-ghost"
+            onClick={() => setTocOpen((v) => !v)}
+            disabled={!hasContent || !tocAvailable}
+            title={
+              !hasContent
+                ? "Open a document to use the table of contents"
+                : !tocAvailable
+                  ? "Need at least 2 headings"
+                  : "Toggle table of contents (Cmd/Ctrl+\\)"
+            }
+            aria-label="Toggle table of contents"
+            data-active={tocVisible}
+            aria-pressed={tocVisible}
+            aria-expanded={tocVisible}
+          >
+            <List size={17} weight={tocVisible ? "fill" : "regular"} />
+          </button>
+          <button
+            className="btn-ghost"
             onClick={() => setMode((m) => (m === "edit" ? "read" : "edit"))}
             disabled={!hasContent}
             title="Toggle edit (Cmd/Ctrl+E)"
@@ -370,17 +413,24 @@ export default function App() {
       <main className="flex-1 min-h-0 flex flex-col relative">
         {!hasContent ? (
           <EmptyState onOpen={handleOpen} />
-        ) : mode === "read" ? (
-          <ReadPane content={content} themeKey={theme} contentRef={contentRef} filePath={filePath} />
         ) : (
-          <EditPane
-            content={content}
-            onChange={setContent}
-            themeKey={theme}
-            editorRef={editorRef}
-            contentRef={contentRef}
-            filePath={filePath}
-          />
+          <div className="flex-1 min-h-0 flex flex-row">
+            {tocVisible ? (
+              <TocPanel items={headings} contentRef={contentRef} modeKey={mode} />
+            ) : null}
+            {mode === "read" ? (
+              <ReadPane content={content} themeKey={theme} contentRef={contentRef} filePath={filePath} />
+            ) : (
+              <EditPane
+                content={content}
+                onChange={setContent}
+                themeKey={theme}
+                editorRef={editorRef}
+                contentRef={contentRef}
+                filePath={filePath}
+              />
+            )}
+          </div>
         )}
         <SearchBar
           open={searchOpen && hasContent}

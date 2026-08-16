@@ -1,5 +1,6 @@
+import { createElement } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const mocks = vi.hoisted(() => ({
@@ -44,9 +45,23 @@ vi.mock("mermaid", () => ({
 }));
 
 vi.mock("./components/MarkdownView", () => ({
-  MarkdownView: ({ source }: { source: string }) => (
-    <div data-testid="markdown-stub">{source}</div>
-  ),
+  MarkdownView: ({ source }: { source: string }) => {
+    const lines = source.split("\n");
+    return (
+      <div data-testid="markdown-stub">
+        {lines.map((line, i) => {
+          const m = /^(#{1,6})\s+(.+)$/.exec(line);
+          if (m) {
+            const level = m[1].length;
+            const text = m[2];
+            const id = text.toLowerCase().replace(/\s+/g, "-");
+            return createElement(`h${level}`, { key: i, id }, text);
+          }
+          return line ? <p key={i}>{line}</p> : null;
+        })}
+      </div>
+    );
+  },
 }));
 
 import App from "./App";
@@ -92,7 +107,7 @@ describe("App shell", () => {
 
     expect(openDialog).toHaveBeenCalledTimes(1);
     expect(readTextFile).toHaveBeenCalledWith("/tmp/notes.md");
-    expect(await screen.findByTestId("markdown-stub")).toHaveTextContent("# Hello");
+    expect(await screen.findByTestId("markdown-stub")).toHaveTextContent("Hello");
     expect(screen.getByText("notes.md")).toBeInTheDocument();
   });
 
@@ -102,5 +117,90 @@ describe("App shell", () => {
     await userEvent.click(screen.getAllByRole("button", { name: /open file/i })[0]);
     expect(readTextFile).not.toHaveBeenCalled();
     expect(screen.getByRole("heading", { name: /quiet place for markdown/i })).toBeInTheDocument();
+  });
+});
+
+async function loadMarkdown(content: string) {
+  openDialog.mockResolvedValueOnce("/tmp/doc.md");
+  readTextFile.mockResolvedValueOnce(content);
+  render(<App />);
+  await userEvent.click(screen.getAllByRole("button", { name: /open file/i })[0]);
+  await screen.findByTestId("markdown-stub");
+}
+
+describe("App TOC", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    document.documentElement.classList.remove("dark");
+    openDialog.mockReset();
+    saveDialog.mockReset();
+    readTextFile.mockReset();
+    writeTextFile.mockReset();
+    invoke.mockReset();
+    invoke.mockResolvedValue(null);
+  });
+
+  it("renders the TOC toggle button in the toolbar", () => {
+    render(<App />);
+    expect(screen.getByRole("button", { name: /toggle table of contents/i })).toBeInTheDocument();
+  });
+
+  it("disables the TOC button when there is no content", () => {
+    render(<App />);
+    expect(screen.getByRole("button", { name: /toggle table of contents/i })).toBeDisabled();
+  });
+
+  it("disables the TOC button when the document has fewer than 2 headings", async () => {
+    await loadMarkdown("# Only one\n\nsome text");
+    expect(screen.getByRole("button", { name: /toggle table of contents/i })).toBeDisabled();
+  });
+
+  it("renders the TOC panel when the document has at least 2 headings", async () => {
+    await loadMarkdown("# A\n\n## B\n\nbody");
+    expect(screen.getByRole("navigation", { name: /table of contents/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^A$/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^B$/ })).toBeInTheDocument();
+  });
+
+  it("toggles TOC visibility on button click and persists state to localStorage", async () => {
+    await loadMarkdown("# A\n\n## B");
+    const toggle = screen.getByRole("button", { name: /toggle table of contents/i });
+    expect(screen.queryByRole("navigation", { name: /table of contents/i })).toBeInTheDocument();
+    await userEvent.click(toggle);
+    expect(screen.queryByRole("navigation", { name: /table of contents/i })).not.toBeInTheDocument();
+    expect(localStorage.getItem("mdora.toc.open")).toBe("false");
+    await userEvent.click(toggle);
+    expect(screen.queryByRole("navigation", { name: /table of contents/i })).toBeInTheDocument();
+    expect(localStorage.getItem("mdora.toc.open")).toBe("true");
+  });
+
+  it("restores TOC closed state from localStorage on mount", async () => {
+    localStorage.setItem("mdora.toc.open", "false");
+    await loadMarkdown("# A\n\n## B");
+    expect(screen.queryByRole("navigation", { name: /table of contents/i })).not.toBeInTheDocument();
+  });
+
+  it("toggles the TOC via Cmd+\\ keyboard shortcut", async () => {
+    await loadMarkdown("# A\n\n## B");
+    expect(screen.queryByRole("navigation", { name: /table of contents/i })).toBeInTheDocument();
+    await act(async () => {
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "\\", metaKey: true, bubbles: true }),
+      );
+    });
+    expect(screen.queryByRole("navigation", { name: /table of contents/i })).not.toBeInTheDocument();
+    await act(async () => {
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "\\", ctrlKey: true, bubbles: true }),
+      );
+    });
+    expect(screen.queryByRole("navigation", { name: /table of contents/i })).toBeInTheDocument();
+  });
+
+  it("keeps the TOC visible when switching from read to edit mode", async () => {
+    await loadMarkdown("# A\n\n## B");
+    expect(screen.queryByRole("navigation", { name: /table of contents/i })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /toggle edit/i }));
+    expect(screen.queryByRole("navigation", { name: /table of contents/i })).toBeInTheDocument();
   });
 });

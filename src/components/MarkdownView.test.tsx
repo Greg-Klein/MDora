@@ -239,4 +239,19 @@ describe("MarkdownView", () => {
     const img = container.querySelector("img");
     expect(img?.getAttribute("src") || "").toBe("");
   });
+
+  it("adds slugified id to headings via rehype-slug", () => {
+    render(<MarkdownView source={"# Hello World\n\n## Sub Section"} themeKey="light" />);
+    expect(screen.getByRole("heading", { name: "Hello World" })).toHaveAttribute("id", "hello-world");
+    expect(screen.getByRole("heading", { name: "Sub Section" })).toHaveAttribute("id", "sub-section");
+  });
+
+  it("disambiguates duplicate heading texts with numeric suffixes", () => {
+    const md = "## Intro\n\ncontent\n\n## Intro\n\nmore";
+    render(<MarkdownView source={md} themeKey="light" />);
+    const headings = screen.getAllByRole("heading", { name: "Intro" });
+    expect(headings).toHaveLength(2);
+    expect(headings[0]).toHaveAttribute("id", "intro");
+    expect(headings[1]).toHaveAttribute("id", "intro-1");
+  });
 });

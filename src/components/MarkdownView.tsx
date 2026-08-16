@@ -1,6 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
+import rehypeSlug from "rehype-slug";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { MermaidBlock } from "./MermaidBlock";
 import { resolveImagePath } from "../lib/paths";
@@ -36,7 +37,7 @@ export function MarkdownView({ source, themeKey, filePath = null }: Props) {
     <article className="prose">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeHighlight]}
+        rehypePlugins={[rehypeSlug, rehypeHighlight]}
         urlTransform={imageSafeUrlTransform}
         components={{
           code({ className, children, ...props }) {
