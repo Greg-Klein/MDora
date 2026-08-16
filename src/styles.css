@@ -22,6 +22,14 @@
   --hl-fn: #1a4f99;
   --hl-type: #b6431f;
   --hl-tag: #8c2a8a;
+
+  /* Fixed paper palette, shared by @media print and .pdf-export-mode so the
+     two stay in sync regardless of the active app theme. */
+  --print-fg: #161613;
+  --print-border: #d2cfc8;
+  --print-muted: #52504c;
+  --print-surface: #f5f4f2;
+  --print-link-border: #a4a09a;
 }
 
 :root.dark {
@@ -684,6 +692,210 @@ button {
 }
 
 @media print {
-  .toc-panel { display: none; }
+  @page {
+    margin: 1.6cm;
+  }
+
+  html, body, #root {
+    height: auto;
+  }
+
+  body {
+    background: #ffffff;
+    color: var(--print-fg);
+  }
+
+  .toolbar,
+  .statusbar,
+  .toc-panel,
+  .search-bar,
+  .update-banner,
+  .drop-overlay {
+    display: none !important;
+  }
+
+  .app-shell {
+    display: block;
+    background: #ffffff;
+    height: auto;
+  }
+
+  main {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+
+  main > div {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+
+  main .overflow-auto {
+    overflow: visible;
+    height: auto;
+  }
+
+  .read-content,
+  .edit-content {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    animation: none;
+  }
+
+  .prose {
+    max-width: 100%;
+    color: var(--print-fg);
+    font-size: 12pt;
+  }
+
+  .prose :is(h1, h2, h3, h4, h5, h6) {
+    color: var(--print-fg);
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .prose h2 {
+    border-bottom-color: var(--print-border);
+  }
+
+  .prose p,
+  .prose li {
+    color: var(--print-fg);
+  }
+
+  .prose a {
+    color: var(--print-fg);
+    border-bottom-color: var(--print-link-border);
+  }
+
+  .prose a[href^="http"]:after {
+    content: " (" attr(href) ")";
+    font-size: 0.82em;
+    color: var(--print-muted);
+  }
+
+  .prose pre,
+  .prose table,
+  .prose blockquote,
+  .prose img,
+  .mermaid-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .prose pre,
+  .prose code {
+    background: var(--print-surface);
+    border-color: var(--print-border);
+    color: var(--print-fg);
+  }
+
+  .prose th,
+  .prose td,
+  .prose hr {
+    border-color: var(--print-border);
+  }
+
+  .prose th {
+    background: var(--print-surface);
+  }
+
+  .prose blockquote {
+    color: var(--print-muted);
+  }
+
+  .mermaid-card {
+    background: #ffffff;
+    border-color: var(--print-border);
+  }
+}
+
+/* Lifted onto contentRef's scroll ancestor (`.overflow-auto`) during export.
+   Without this, html2canvas replays that ancestor's clipped scroll height and
+   silently drops everything below the fold at click-time. */
+.pdf-export-mode-scroll {
+  overflow: visible !important;
+  height: auto !important;
+}
+
+/* Forced light rendering for PDF export (html2pdf.js captures the live DOM,
+   not the @media print cascade, so it needs its own class-based equivalent). */
+.pdf-export-mode {
+  background: #ffffff;
+  color: var(--print-fg);
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  animation: none;
+}
+
+.pdf-export-mode .prose {
+  max-width: 100%;
+  color: var(--print-fg);
+  font-size: 12pt;
+}
+
+.pdf-export-mode .prose :is(h1, h2, h3, h4, h5, h6) {
+  color: var(--print-fg);
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+.pdf-export-mode .prose h2 {
+  border-bottom-color: var(--print-border);
+}
+
+.pdf-export-mode .prose p,
+.pdf-export-mode .prose li {
+  color: var(--print-fg);
+}
+
+.pdf-export-mode .prose a {
+  color: var(--print-fg);
+  border-bottom-color: var(--print-link-border);
+}
+
+.pdf-export-mode .prose a[href^="http"]:after {
+  content: " (" attr(href) ")";
+  font-size: 0.82em;
+  color: var(--print-muted);
+}
+
+.pdf-export-mode .prose pre,
+.pdf-export-mode .prose table,
+.pdf-export-mode .prose blockquote,
+.pdf-export-mode .prose img,
+.pdf-export-mode .mermaid-card {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.pdf-export-mode .prose pre,
+.pdf-export-mode .prose code {
+  background: var(--print-surface);
+  border-color: var(--print-border);
+  color: var(--print-fg);
+}
+
+.pdf-export-mode .prose th,
+.pdf-export-mode .prose td,
+.pdf-export-mode .prose hr {
+  border-color: var(--print-border);
+}
+
+.pdf-export-mode .prose th {
+  background: var(--print-surface);
+}
+
+.pdf-export-mode .prose blockquote {
+  color: var(--print-muted);
+}
+
+.pdf-export-mode .mermaid-card {
+  background: #ffffff;
+  border-color: var(--print-border);
 }
 ::-webkit-scrollbar-track { background: transparent; }
