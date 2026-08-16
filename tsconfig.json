@@ -8,6 +8,10 @@
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "html2pdf.js": ["src/types/html2pdf-shim.d.ts"]
+    },
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
