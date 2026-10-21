@@ -1,8 +1,6 @@
 # MDora
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-brown.svg)](./LICENSE)
-[![StackLint grade](https://stacklint.app/api/badge/github/Greg-Klein/MDora.svg)](https://stacklint.app/analyze?repo=https%3A%2F%2Fgithub.com%2FGreg-Klein%2FMDora)
-
 A markdown file viewer that doesn't feel like a Word doc or like an IDE. Just a quiet place to read `.md` files, with Mermaid graphs that actually work and code highlighting that doesn't hurt your eyes.
 
 Cross-platform desktop app built with [Tauri v2](https://v2.tauri.app/), so it ships as a native ~10 MB binary that starts instantly on macOS, Windows and Linux.
